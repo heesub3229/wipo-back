@@ -38,8 +38,8 @@ jobs:
            with:
                 aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
                 aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-                application_name: wipo-backend
-                environment_name: wipo-backend-env
+                application_name: wipo-back
+                environment_name: wipo-back-env
                 version_label: github-action-${{steps.current-time.outputs.formattedTime}}
                 region: ap-northeast-2
                 deployment_package: ${{env.artifact}}
