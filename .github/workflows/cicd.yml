@@ -42,4 +42,4 @@ jobs:
                 environment_name: wipo-backend-env
                 version_label: github-action-${{steps.current-time.outputs.formattedTime}}
                 region: ap-northeast-2
-                deployment_package: ./build/libs/${{env.artifact}}
+                deployment_package: ${{env.artifact}}
