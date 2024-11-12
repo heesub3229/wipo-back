@@ -28,7 +28,7 @@ jobs:
                 utcOffset: "+09:00"
                 
          - name: Set artifact path
-              run: |
+           run: |
                 artifact=$(ls ./build/libs/*.jar)
                 echo "artifact=$artifact" >> $GITHUB_ENV
 
