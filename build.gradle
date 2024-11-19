@@ -46,20 +46,6 @@ tasks.named('test') {
 	useJUnitPlatform()
 }
 
-tasks.named('bootRun') {
-    doFirst {
-        environment("DB_URL", project.hasProperty("dbUrl") ? project.getProperty("dbUrl") : null)
-        environment("DB_USERNAME", project.hasProperty("dbUsername") ? project.getProperty("dbUsername") : null)
-        environment("DB_PASSWORD", project.hasProperty("dbPassword") ? project.getProperty("dbPassword") : null)
-        environment("JWT_SECRET", project.hasProperty("jwtSecret") ? project.getProperty("jwtSecret") : null)
-        environment("KAKAO_CLIENT_ID", project.hasProperty("kakaoClientId") ? project.getProperty("kakaoClientId") : null)
-        environment("NAVER_CLIENT_ID", project.hasProperty("naverClientId") ? project.getProperty("naverClientId") : null)
-        environment("GOOGLE_CLIENT_ID", project.hasProperty("googleClientId") ? project.getProperty("googleClientId") : null)
-        environment("KAKAO_REDIRECT_URL", project.hasProperty("kakaoRedirectUrl") ? project.getProperty("kakaoRedirectUrl") : null)
-        environment("NAVER_SECRET", project.hasProperty("naverSecret") ? project.getProperty("naverSecret") : null)
-        environment("NAVER_REDIRECT_URL", project.hasProperty("naverRedirectUrl") ? project.getProperty("naverRedirectUrl") : null)
-    }
-}
 jar {
 	enabled = false
 }
