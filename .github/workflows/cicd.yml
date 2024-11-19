@@ -32,6 +32,10 @@ jobs:
          - name: Debug application.properties
            run: cat src/main/resources/application.properties
            
+         - name: Debug Variables
+           run: |
+                echo "APPLICATION_PROPS: ${{ github.variables.APPLICATION_PROPS }}"
+
          - name: Build with gradlew
            run: |
                 ./gradlew clean build
