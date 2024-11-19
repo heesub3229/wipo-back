@@ -24,6 +24,12 @@ public class UserController {
 	@Autowired
 	private UserService userService;
 	
+	
+	@GetMapping("/")
+	public ResponseEntity<?> testApi(){
+		return new ResponseEntity<>("Hello World",HttpStatus.OK); 
+	}
+	
 	//카카오 로그인
 	@GetMapping("/kakaoLogin")
 	public ResponseEntity<?> kakaoLogin(@RequestParam("code")String code) {
