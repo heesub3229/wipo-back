@@ -25,6 +25,9 @@ jobs:
          - name: Grant execute permission for gradlew
            run: chmod +x gradlew
            
+         - name: Debug application.properties
+           run: cat src/main/resources/application.properties
+           
          - name: Create application.properties
            run: |
                 echo "${{ secrets.APPLICATION_PROPERTIES }}" > src/main/resources/application.properties
