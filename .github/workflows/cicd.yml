@@ -18,7 +18,20 @@ jobs:
            run: chmod +x gradlew
            
          - name: Build with gradlew
-           run: ./gradlew clean build
+           env:
+               DB_URL: ${{ secrets.DB_URL }}
+               DB_USERNAME: ${{ secrets.DB_USERNAME }}
+               DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+               JWT_SECRET: ${{ secrets.JWT_SECRET }}
+               KAKAO_CLIENT_ID: ${{ secrets.KAKAO_CLIENT_ID }}
+               KAKAO_REDIRECT_URL: ${{ secrets.KAKAO_REDIRECT_URL }}
+               GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+               NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
+               NAVER_SECRET: ${{ secrets.NAVER_SECRET }}
+               NAVER_REDIRECT_URL: ${{ secrets.NAVER_REDIRECT_URL }}
+           run: ./gradlew clean build -PdbUrl=$DB_URL -PdbUsername=$DB_USERNAME -PdbPassword=$DB_PASSWORD \
+                -PjwtSecret=$JWT_SECRET -PkakaoClientId=$KAKAO_CLIENT_ID -PkakaoRedirectUrl=$KAKAO_REDIRECT_URL -PgoogleClientId=$GOOGLE_CLIENT_ID \
+                -PnaverClientId=$NAVER_CLIENT_ID -PnaverSecret=$NAVER_SECRET -PnaverRedirectUrl=$NAVER_REDIRECT_URL
            
          - name: Get current time
            uses: josStorer/get-current-time@v2.0.2
