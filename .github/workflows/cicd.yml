@@ -29,7 +29,8 @@ jobs:
                NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
                NAVER_SECRET: ${{ secrets.NAVER_SECRET }}
                NAVER_REDIRECT_URL: ${{ secrets.NAVER_REDIRECT_URL }}
-           run: ./gradlew clean build -PdbUrl=$DB_URL -PdbUsername=$DB_USERNAME -PdbPassword=$DB_PASSWORD \
+           run: |
+                ./gradlew clean build -PdbUrl=$DB_URL -PdbUsername=$DB_USERNAME -PdbPassword=$DB_PASSWORD \
                 -PjwtSecret=$JWT_SECRET -PkakaoClientId=$KAKAO_CLIENT_ID -PkakaoRedirectUrl=$KAKAO_REDIRECT_URL -PgoogleClientId=$GOOGLE_CLIENT_ID \
                 -PnaverClientId=$NAVER_CLIENT_ID -PnaverSecret=$NAVER_SECRET -PnaverRedirectUrl=$NAVER_REDIRECT_URL
            
