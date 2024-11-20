@@ -1,5 +1,7 @@
 package com.wipo.Service;
 
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -27,6 +29,13 @@ public class ApiService {
 	@Value("${naver.secret}")
 	private String secret;
 	
+	@Value("${google.clientId}")
+	private String googleClientId;
+	@Value("${google.redirectUrl}")
+	private String googleRedirectUrl;
+	@Value("${google.secret}")
+	private String googleSecret;
+	
 	private WebClient webClient = WebClient.create();
 	
 	public Mono<String> tokenApi(String code){
@@ -43,7 +52,7 @@ public class ApiService {
 			        .bodyToMono(String.class);
 		}catch (Exception e) {
 			// TODO: handle exception
-			log.error("ApiService.33 : {}",e);
+			log.error("ApiService.tokenApi : {}",e);
 			return null;
 		}
 		
@@ -60,7 +69,7 @@ public class ApiService {
 			        .bodyToMono(String.class);
 		}catch (Exception e) {
 			// TODO: handle exception
-			log.error("ApiService.50 : {}",e);
+			log.error("ApiService.kakaoUserInfo : {}",e);
 			return null;
 		}
 		
@@ -79,7 +88,7 @@ public class ApiService {
 			        .bodyToMono(String.class);
 		}catch (Exception e) {
 			// TODO: handle exception
-			log.error("ApiService.76 : {}",e);
+			log.error("ApiService.refreshKakaoApi : {}",e);
 			return null;
 		}
 		
@@ -97,7 +106,7 @@ public class ApiService {
 					.bodyToMono(String.class);
 		}catch (Exception e) {
 			// TODO: handle exception
-			log.error("ApiService.92 : {}",e);
+			log.error("ApiService.tokenInfo : {}",e);
 			return null;
 		}
 	}
@@ -115,7 +124,7 @@ public class ApiService {
 					.queryParam("state", UtilService.generateState()).build()).retrieve().bodyToMono(String.class);
 		}catch (Exception e) {
 			// TODO: handle exception
-			log.error("ApiService.118 : {}",e);
+			log.error("ApiService.naverAuthToken : {}",e);
 			return null;
 		}
 	}
@@ -127,7 +136,43 @@ public class ApiService {
 			return webClient.get().uri(apiUrl).header("Authorization", access_token).retrieve().bodyToMono(String.class);
 		}catch (Exception e) {
 			// TODO: handle exception
-			log.error("ApiService.130 : {}",e);
+			log.error("ApiService.naverInfo : {}",e);
+			return null;
+		}
+	}
+	
+	public Mono<String> googleToken(String code){
+		try {
+			
+			String apiUrl = "https://oauth2.googleapis.com/token";
+			
+			return webClient.post()
+					.uri(apiUrl)
+					.contentType(MediaType.APPLICATION_FORM_URLENCODED)
+					.body(BodyInserters.fromFormData("code", code)
+	                        .with("client_id", googleClientId)
+	                        .with("client_secret", googleSecret)
+	                        .with("redirect_uri", googleRedirectUrl)
+	                        .with("grant_type", "authorization_code")
+	                        .with("access_type", "offline"))
+					.retrieve()
+					.bodyToMono(String.class);
+			
+		}catch (Exception e) {
+			// TODO: handle exception
+			log.error("ApiService.googleToken : {}",e);
+			return null;
+		}
+	}
+	
+	public Mono<String> googleInfo(String access_token){
+		try {
+			String apiUrl = "https://www.googleapis.com/oauth2/v3/userinfo";
+			
+			return webClient.get().uri(apiUrl).header("Authorization", "Bearer "+access_token).retrieve().bodyToMono(String.class);
+		}catch (Exception e) {
+			// TODO: handle exception
+			log.error("ApiService.googleInfo : {}",e);
 			return null;
 		}
 	}

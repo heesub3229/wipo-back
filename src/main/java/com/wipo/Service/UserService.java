@@ -6,7 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.wipo.Appconfig.JwtTokenProvider;
-import com.wipo.DTO.GoogleResDTO;
+import com.wipo.DTO.GoogleInfoDTO;
+import com.wipo.DTO.GoogleTokenDTO;
 import com.wipo.DTO.JwtDTO;
 import com.wipo.DTO.KakaoTokenDTO;
 import com.wipo.DTO.KakaoUserDTO;
@@ -95,7 +96,7 @@ public class UserService {
 					.data(e.getMessage())
 					.build();
 			
-			log.error("UserService.92 : {}",e);
+			log.error("UserService.kakaoLogin : {}",e);
 			
 			return ret;
 		}
@@ -132,7 +133,7 @@ public class UserService {
 			return userRepository.save(userEntities);
 		}catch (Exception e) {
 			// TODO: handle exception
-			log.error("UserService.125 : {}",e);
+			log.error("UserService.snsLogin : {}",e);
 			return null;
 			
 		}
@@ -140,37 +141,51 @@ public class UserService {
 	
 	public ResponseDTO<String> googleLogin(String credential){
 		try {
-			Mono<String> apiData = apiService.tokenInfo(credential);
-			if(apiData==null) {
+			Mono<String> apiJson = apiService.googleToken(credential);
+			
+			if(apiJson == null) {
 				throw new Exception("구글로그인 에러");
 			}
-			GoogleResDTO tokenDto = UtilService.parseJsonToDto(apiData.block(), GoogleResDTO.class);
+			
+			GoogleTokenDTO tokenDto = UtilService.parseJsonToDto(apiJson.block(), GoogleTokenDTO.class);
+			
 			if(tokenDto==null) {
 				throw new Exception("구글로그인 에러");
 			}
-			UserEntity userInfo = snsLogin("G",tokenDto.getEmail(),null,tokenDto.getName());
+			
+			Mono<String> infoJson = apiService.googleInfo(tokenDto.getAccess_token());
+			if(infoJson == null) {
+				throw new Exception("구글정보조회 에러");
+			}
+			
+			GoogleInfoDTO infoDto = UtilService.parseJsonToDto(infoJson.block(), GoogleInfoDTO.class);
+			
+			if(infoDto == null) {
+				throw new Exception("구글정보조회 에러");
+			}
+			UserEntity userInfo = snsLogin("G",infoDto.getEmail(),tokenDto.getAccess_token(),infoDto.getName());
 			if(userInfo == null) {
 				throw new Exception("로그인에러");
 			}
 			
 			JwtDTO jwtDto = JwtDTO.builder()
-								.access_token(null)
-								.expires_in(10800L)
-								.id_token(null)
-								.refresh_token(null)
-								.refresh_token_expires_in(10800L)
-								.sid(userInfo.getSid())
-								.type(userInfo.getLogin_type())
-								.build();
-			
+			.access_token(tokenDto.getAccess_token())
+			.expires_in(tokenDto.getExpires_in())
+			.id_token(tokenDto.getId_token())
+			.refresh_token(tokenDto.getRefresh_token())
+			.refresh_token_expires_in(tokenDto.getExpires_in())
+			.sid(userInfo.getSid())
+			.type(userInfo.getLogin_type())
+			.build();
+
 			String jwtToken = jwtTokenProvider.generateToken(jwtDto);
-			
+
 			ResponseDTO<String> ret = ResponseDTO.<String>builder()
-										.errFlag(false)
-										.resDate(new Date())
-										.data(jwtToken)
-										.build();
-			
+					.errFlag(false)
+					.resDate(new Date())
+					.data(jwtToken)
+					.build();
+
 			return ret;
 		}catch (Exception e) {
 			// TODO: handle exception
@@ -180,7 +195,7 @@ public class UserService {
 					.data(e.getMessage())
 					.build();
 			
-			log.error("UserService.184 : {}",e);
+			log.error("UserService.googleLogin : {}",e);
 			
 			return ret;
 		}
@@ -248,7 +263,7 @@ public class UserService {
 					.data(e.getMessage())
 					.build();
 			
-			log.error("UserService.251 : {}",e);
+			log.error("UserService.naverLogin : {}",e);
 			
 			return ret;
 		}

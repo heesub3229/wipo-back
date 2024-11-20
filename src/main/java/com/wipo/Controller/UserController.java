@@ -39,7 +39,7 @@ public class UserController {
 			return new ResponseEntity<>(ret,HttpStatus.OK); 
 		}catch (Exception e) {
 			// TODO: handle exception
-			log.error("UserController.36 : ",e);
+			log.error("UserController.kakaoLogin : ",e);
 			
 			return ResponseEntity.badRequest().body("로그인서버에러");
 		}
@@ -54,7 +54,7 @@ public class UserController {
 			return new ResponseEntity<>(ret,HttpStatus.OK); 
 		}catch (Exception e) {
 			// TODO: handle exception
-			log.error("UserController.51 : ",e);
+			log.error("UserController.googleLogin : ",e);
 			
 			return ResponseEntity.badRequest().body("로그인서버에러");
 		}
@@ -68,7 +68,7 @@ public class UserController {
 			return new ResponseEntity<>(ret,HttpStatus.OK); 
 		}catch (Exception e) {
 			// TODO: handle exception
-			log.error("UserController.65 : ",e);
+			log.error("UserController.naverLogin : ",e);
 			
 			return ResponseEntity.badRequest().body("로그인서버에러");
 		}

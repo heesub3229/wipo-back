@@ -9,7 +9,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class GoogleResDTO {
-	private String email;
-	private String name;
+public class GoogleTokenDTO {
+	private String access_token;
+	private String refresh_token;
+	private Long expires_in;
+	private String scope;
+	private String id_token;
 }

@@ -22,7 +22,7 @@ public class UtilService {
 			return mapper.readValue(json, dto);
 		}catch (Exception e) {
 			// TODO: handle exception
-			log.error("UtilService.23 : {}",e);
+			log.error("UtilService.parseJsonToDto : {}",e);
 			return null;
 		}
 		
@@ -34,7 +34,7 @@ public class UtilService {
 			ret = UUID.randomUUID().toString();
 		}catch (Exception e) {
 			// TODO: handle exception
-			log.error("UtilService.37 : {}",e);
+			log.error("UtilService.generateState : {}",e);
 		}
 		return ret;
 	}
