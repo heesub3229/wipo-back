@@ -101,7 +101,7 @@ public class UtilService {
 		EmailAuthCodeDTO ret = null;
 		try {
 			String code = generateCode();
-			ret = new EmailAuthCodeDTO(code, LocalDateTime.now(ZoneId.of("Asia/Seoul")).plusMinutes(3));
+			ret = new EmailAuthCodeDTO(code, LocalDateTime.now().plusMinutes(3));
 	        codes.put(email, ret);
 		}catch (Exception e) {
 			// TODO: handle exception
