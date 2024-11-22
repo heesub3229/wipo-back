@@ -1,19 +1,22 @@
 package com.wipo.Service;
 
+import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.wipo.Appconfig.JwtTokenProvider;
+import com.wipo.DTO.EmailAuthCodeDTO;
 import com.wipo.DTO.GoogleInfoDTO;
 import com.wipo.DTO.GoogleTokenDTO;
 import com.wipo.DTO.JwtDTO;
 import com.wipo.DTO.KakaoTokenDTO;
 import com.wipo.DTO.KakaoUserDTO;
-import com.wipo.DTO.NaverInfoDTO;
-import com.wipo.DTO.NaverTokenDTO;
 import com.wipo.DTO.ResponseDTO;
+import com.wipo.DTO.UserSignDTO;
 import com.wipo.Entity.UserEntity;
 import com.wipo.Repository.UserRepository;
 
@@ -117,13 +120,14 @@ public class UserService {
 			
 			if(userEntities != null) {
 				userEntities.setPassword(access_token);
+				userEntities.setPrivacy(true);
 				
 			}else {
 				userEntities = UserEntity.builder()
 								.create_at(new Date())
 								.email(email)
 								.isPrivacy(true)
-								.login_type(login_type) // type kakao:K google:G Naver:N
+								.login_type(login_type) // type kakao:K google:G
 								.name(name)
 								.password(access_token)
 								.build();
@@ -201,58 +205,163 @@ public class UserService {
 		}
 	}
 	
-	public ResponseDTO<String> naverLogin(String code){
+	public ResponseDTO<?> emailValid(String email, String code){
+		try {
+			boolean errFlag = UtilService.validateAuthEmail(email, code);
+			
+			return ResponseDTO.<Boolean>builder()
+					.errFlag(errFlag)
+					.resDate(new Date())
+					.build();
+		}catch (Exception e) {
+			// TODO: handle exception
+			ResponseDTO<String> ret = ResponseDTO.<String>builder()
+					.errFlag(true)
+					.resDate(new Date())
+					.data(e.getMessage())
+					.build();
+			
+			log.error("UserService.emailValid : {}",e);
+			
+			return ret;
+		}
+	}
+	
+	public ResponseDTO<?> emailAuth(String email){
 		
 		try {
-			Mono<String> authToken = apiService.naverAuthToken(code);
-			if(authToken == null) {
-				throw new Exception("네이버로그인 에러");
+
+			EmailAuthCodeDTO ret = UtilService.generateAndSaveCode(email);
+			
+			String emailBody = """
+	                   <!DOCTYPE html>
+	                   <html lang="ko">
+	                   <head>
+	                       <meta charset="UTF-8">
+	                       <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	                       <title>Verification Code</title>
+	                       <link href="https://hangeul.pstatic.net/hangeul_static/css/nanum-square-neo.css" rel="stylesheet">
+	                   </head>
+	                   <body style="font-family: nanum-square-neo, sans-serif; line-height: 1.6; background-color: #f4f4f9; padding: 20px;">
+
+	                       <div style="max-width: 50vw; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);">
+	                           <header style="background-color: #E0E7FF; padding: 10px; text-align: center; color: white;">
+	                            <img src="https://wipo-front-buck.s3.ap-northeast-2.amazonaws.com/static/media/Logo.69bfbfa08f08bc092067.png" alt="Logo" style="margin-top: 10px; width: 10vw; height: auto;"/>
+	                        </header>
+	                           <main style="padding: 20px;">
+	                               <h2 style="color: #333;">이메일 인증코드</h2>
+	                               <p>당신만의 이야기를 기록할 수 있는 <b>WiPo </b>서비스에 가입하신 것을 환영합니다!</p>
+	                               <p>아래의 인증코드를 입력하시면 가입이 정상적으로 완료됩니다.</p>
+	                               <div style="margin: 5vh 0; text-align: center;">
+	                                   <span style="font-size: 36px; color: #364474; font-weight: bold; border: 2px solid #364474; padding: 1vh 2vw; border-radius: 10px;">"""+ret.getCode()+"""
+	                                   </span>
+	                               </div>
+	                               <p><b>3분</b> 내에 인증코드를 입력해주세요.</p>
+	                               <p>궁금한 점이 있거나 도움이 필요하면 언제든지 저희에게 문의해주세요.</p>
+	                               <p style="margin-top: 5vh;">감사합니다.</p>
+	                               <p style="font-weight: bold;">Wipo 팀 드림</p>
+	                           </main>
+	                           <footer style="background-color: #E0E7FF; padding: 10px 20px; text-align: center; font-size: 12px; color: #777;">
+	                               <p>© 2024 WiPo. All rights reserved.</p>
+	                           </footer>
+	                       </div>
+
+	                   </body>
+	                   </html>
+	""";
+			
+			boolean errFlag = UtilService.sendEmail(email, "이메일보안인증", emailBody);
+			if(errFlag) {
+				throw new Exception("이메일전송에러");
 			}
-			NaverTokenDTO authDto = UtilService.parseJsonToDto(authToken.block(), NaverTokenDTO.class);
-			if(authDto == null) {
-				throw new Exception("네이버로그인 에러");
+			
+			return ResponseDTO.<LocalDateTime>builder()
+					.errFlag(errFlag)
+					.data(ret.getExpiresAt())
+					.resDate(new Date())
+					.build();
+					
+		}catch (Exception e) {
+			// TODO: handle exception
+			ResponseDTO<String> ret = ResponseDTO.<String>builder()
+					.errFlag(true)
+					.resDate(new Date())
+					.data(e.getMessage())
+					.build();
+			
+			log.error("UserService.emailAuth : {}",e);
+			
+			return ret;
+			
+		}
+		
+	}
+	
+	public ResponseDTO<?> asign(UserSignDTO dto){
+		try {
+			UserEntity userEntities = UserEntity.builder()
+													.create_at(new Date())
+													.dateBirth(dto.getBirthDate())
+													.email(dto.getEmail())
+													.isPrivacy(true)
+													.login_type("W")
+													.name(dto.getName())
+													.password(dto.getPassword())
+													.build();
+			userRepository.save(userEntities);
+			
+			return ResponseDTO.<String>builder()
+					.errFlag(false)
+					.resDate(new Date())
+					.build();
+		}catch (Exception e) {
+			// TODO: handle exception
+			ResponseDTO<String> ret = ResponseDTO.<String>builder()
+					.errFlag(true)
+					.resDate(new Date())
+					.data(e.getMessage())
+					.build();
+			
+			log.error("UserService.asign : {}",e);
+			
+			return ret;
+		}
+	}
+	
+	public ResponseDTO<?> login(Map<String, String> dto){
+		try {
+			String email = dto.get("email");
+			if(email == null) {
+				throw new Exception("이메일 에러");
 			}
-			
-			Mono<String> infoJson = apiService.naverInfo(authDto.getAccess_token());
-			
-			if(infoJson == null) {
-				throw new Exception("네이버로그인 에러");
+			String password = dto.get("password");
+			if(password == null) {
+				throw new Exception("패스워드 에러");
 			}
+			Optional<UserEntity> userEntities = userRepository.findByEmailAndPassword(email, password);
 			
-			NaverInfoDTO infoDto = UtilService.parseJsonToDto(infoJson.block(), NaverInfoDTO.class);
-			
-			if(infoDto==null|| !infoDto.getMessage().equals("success")) {
-				throw new Exception("네이버로그인 에러");
+			if(!userEntities.isPresent()) {
+				throw new Exception("정보 없음");
 			}
-			
-			String[] parts = infoDto.getResponse().getBirthday().split("-");
-			
-			String birthDate = infoDto.getResponse().getBirthyear()+parts[0]+parts[1];
-			
-			UserEntity userInfo = snsLogin("N",infoDto.getResponse().getEmail(),authDto.getAccess_token(),infoDto.getResponse().getName());
-			if(userInfo == null) {
-				throw new Exception("로그인에러");
-			}
-			userInfo.setDateBirth(birthDate);
-			userInfo = userRepository.save(userInfo);
 			
 			JwtDTO jwtDto = JwtDTO.builder()
-					.access_token(userInfo.getPassword())
-					.expires_in(authDto.getExpires_in())
+					.access_token(null)
+					.expires_in(10800L)
 					.id_token(null)
-					.refresh_token(authDto.getRefresh_token())
-					.refresh_token_expires_in(authDto.getExpires_in())
-					.sid(userInfo.getSid())
-					.type(userInfo.getLogin_type())
+					.refresh_token(null)
+					.refresh_token_expires_in(10800L)
+					.sid(userEntities.get().getSid())
+					.type(userEntities.get().getLogin_type())
 					.build();
 
 			String jwtToken = jwtTokenProvider.generateToken(jwtDto);
 			
 			ResponseDTO<String> ret = ResponseDTO.<String>builder()
-										.errFlag(false)
-										.resDate(new Date())
-										.data(jwtToken)
-										.build();
+					.errFlag(false)
+					.resDate(new Date())
+					.data(jwtToken)
+					.build();
+
 			return ret;
 			
 		}catch (Exception e) {
@@ -263,12 +372,10 @@ public class UserService {
 					.data(e.getMessage())
 					.build();
 			
-			log.error("UserService.naverLogin : {}",e);
+			log.error("UserService.login : {}",e);
 			
 			return ret;
 		}
-		
-		
 	}
 	
 }
