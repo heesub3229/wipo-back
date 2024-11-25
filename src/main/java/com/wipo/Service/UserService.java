@@ -1,7 +1,7 @@
 package com.wipo.Service;
 
 import java.time.LocalDateTime;
-import java.util.Date;
+import java.time.ZonedDateTime;
 import java.util.Map;
 import java.util.Optional;
 
@@ -86,7 +86,7 @@ public class UserService {
 			
 			ResponseDTO<String> ret = ResponseDTO.<String>builder()
 										.errFlag(false)
-										.resDate(new Date())
+										.resDate(ZonedDateTime.now())
 										.data(jwtToken)
 										.build();
 			
@@ -95,7 +95,7 @@ public class UserService {
 			// TODO: handle exception
 			ResponseDTO<String> ret = ResponseDTO.<String>builder()
 					.errFlag(true)
-					.resDate(new Date())
+					.resDate(ZonedDateTime.now())
 					.data(e.getMessage())
 					.build();
 			
@@ -124,7 +124,7 @@ public class UserService {
 				
 			}else {
 				userEntities = UserEntity.builder()
-								.create_at(new Date())
+								.create_at(ZonedDateTime.now())
 								.email(email)
 								.isPrivacy(true)
 								.login_type(login_type) // type kakao:K google:G
@@ -186,7 +186,7 @@ public class UserService {
 
 			ResponseDTO<String> ret = ResponseDTO.<String>builder()
 					.errFlag(false)
-					.resDate(new Date())
+					.resDate(ZonedDateTime.now())
 					.data(jwtToken)
 					.build();
 
@@ -195,7 +195,7 @@ public class UserService {
 			// TODO: handle exception
 			ResponseDTO<String> ret = ResponseDTO.<String>builder()
 					.errFlag(true)
-					.resDate(new Date())
+					.resDate(ZonedDateTime.now())
 					.data(e.getMessage())
 					.build();
 			
@@ -211,13 +211,13 @@ public class UserService {
 			
 			return ResponseDTO.<Boolean>builder()
 					.errFlag(errFlag)
-					.resDate(new Date())
+					.resDate(ZonedDateTime.now())
 					.build();
 		}catch (Exception e) {
 			// TODO: handle exception
 			ResponseDTO<String> ret = ResponseDTO.<String>builder()
 					.errFlag(true)
-					.resDate(new Date())
+					.resDate(ZonedDateTime.now())
 					.data(e.getMessage())
 					.build();
 			
@@ -278,14 +278,14 @@ public class UserService {
 			return ResponseDTO.<LocalDateTime>builder()
 					.errFlag(errFlag)
 					.data(ret.getExpiresAt())
-					.resDate(new Date())
+					.resDate(ZonedDateTime.now())
 					.build();
 					
 		}catch (Exception e) {
 			// TODO: handle exception
 			ResponseDTO<String> ret = ResponseDTO.<String>builder()
 					.errFlag(true)
-					.resDate(new Date())
+					.resDate(ZonedDateTime.now())
 					.data(e.getMessage())
 					.build();
 			
@@ -300,7 +300,7 @@ public class UserService {
 	public ResponseDTO<?> asign(UserSignDTO dto){
 		try {
 			UserEntity userEntities = UserEntity.builder()
-													.create_at(new Date())
+													.create_at(ZonedDateTime.now())
 													.dateBirth(dto.getBirthDate())
 													.email(dto.getEmail())
 													.isPrivacy(true)
@@ -312,13 +312,13 @@ public class UserService {
 			
 			return ResponseDTO.<String>builder()
 					.errFlag(false)
-					.resDate(new Date())
+					.resDate(ZonedDateTime.now())
 					.build();
 		}catch (Exception e) {
 			// TODO: handle exception
 			ResponseDTO<String> ret = ResponseDTO.<String>builder()
 					.errFlag(true)
-					.resDate(new Date())
+					.resDate(ZonedDateTime.now())
 					.data(e.getMessage())
 					.build();
 			
@@ -358,7 +358,7 @@ public class UserService {
 			
 			ResponseDTO<String> ret = ResponseDTO.<String>builder()
 					.errFlag(false)
-					.resDate(new Date())
+					.resDate(ZonedDateTime.now())
 					.data(jwtToken)
 					.build();
 
@@ -368,7 +368,7 @@ public class UserService {
 			// TODO: handle exception
 			ResponseDTO<String> ret = ResponseDTO.<String>builder()
 					.errFlag(true)
-					.resDate(new Date())
+					.resDate(ZonedDateTime.now())
 					.data(e.getMessage())
 					.build();
 			

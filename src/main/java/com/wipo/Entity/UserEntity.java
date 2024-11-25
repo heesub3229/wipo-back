@@ -1,5 +1,6 @@
 package com.wipo.Entity;
 
+import java.time.ZonedDateTime;
 import java.util.Date;
 
 import jakarta.persistence.Column;
@@ -45,7 +46,7 @@ public class UserEntity {
 	    private boolean isPrivacy;
 	    
 	    @Column(name="create_at", nullable = false)
-	    private Date create_at;
+	    private ZonedDateTime create_at;
 	    
 	    
 	

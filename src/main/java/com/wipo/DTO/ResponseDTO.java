@@ -1,5 +1,6 @@
 package com.wipo.DTO;
 
+import java.time.ZonedDateTime;
 import java.util.Date;
 
 import lombok.AllArgsConstructor;
@@ -14,5 +15,5 @@ import lombok.NoArgsConstructor;
 public class ResponseDTO<T> {
 	private boolean errFlag;
 	private T data;
-	private Date resDate;
+	private ZonedDateTime resDate;
 }
