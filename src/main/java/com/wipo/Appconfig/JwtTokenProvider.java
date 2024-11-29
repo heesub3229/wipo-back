@@ -29,9 +29,6 @@ public class JwtTokenProvider {
 	@Autowired
 	private UtilService utilService;
 	
-	@Autowired
-	private ApiService apiService;
-	
 	private final ObjectMapper mapper = new ObjectMapper();
 		
 	public String generateToken(JwtDTO dto) {
@@ -52,7 +49,7 @@ public class JwtTokenProvider {
 	}
 	
 	
-	public String validateJwt(String token) {
+	public boolean validateJwt(String token) {
 		String ret = "";
 		try {
 			Claims claims = validateToken(token);
@@ -64,27 +61,14 @@ public class JwtTokenProvider {
 				throw new Exception();
 			}
 			
-			JwtDTO jwtToken = validateAccess(claims);
-			
-			if(jwtToken == null) {
-				throw new Exception();
-			}
-			String json = claims.get("user",String.class);
-			JwtDTO jwtDto = utilService.parseJsonToDto(json, JwtDTO.class);
-			
-			if(jwtDto.getAccess_token().equals(jwtToken.getAccess_token())) {
-				
-			}else {
-				ret = generateToken(jwtToken);
-			}
-			return ret;
+			return false;
 		}catch (Exception e) {
 			// TODO: handle exception
-			return null;
+			return true;
 		}
 	}
 	
-	private Claims validateToken(String token) {
+	public Claims validateToken(String token) {
 		try {
 			return Jwts.parserBuilder()
                     .setSigningKey(Keys.hmacShaKeyFor(secretKey.getBytes()))
@@ -97,48 +81,4 @@ public class JwtTokenProvider {
 		}
 	}
 	
-	private JwtDTO validateAccess(Claims claims) {
-		
-		JwtDTO token = null;
-		KakaoTokenDTO kakaoToken = null;
-		try {
-			String json = claims.get("user",String.class);
-			
-			JwtDTO jwtDto = utilService.parseJsonToDto(json, JwtDTO.class);
-			
-			Date jwtDt = claims.getIssuedAt();
-			
-			Date convJwtDt = new Date(jwtDt.getTime()+jwtDto.getExpires_in()*1000);
-			
-			boolean accessFlag = convJwtDt.after(new Date());
-			
-			if(accessFlag) {
-				return jwtDto;
-			}else {
-				Mono<String> apiRet = apiService.refreshKakaoApi(jwtDto);
-				if(apiRet==null) {
-					throw new Exception();
-				}
-				kakaoToken = utilService.parseJsonToDto(apiRet.block(), KakaoTokenDTO.class);
-			}
-			
-			if(kakaoToken==null) {
-				throw new Exception();
-			}
-			
-			token.setSid(jwtDto.getSid());
-			token.setAccess_token(kakaoToken.getAccess_token());
-			token.setExpires_in(kakaoToken.getExpires_in());
-			token.setRefresh_token(kakaoToken.getRefresh_token());
-			token.setRefresh_token_expires_in(kakaoToken.getRefresh_token_expires_in());
-			token.setType(jwtDto.getType());
-			
-			return token;
-		}catch (Exception e) {
-			// TODO: handle exception
-			return null;
-		}
-		
-		
-	}
 }

@@ -299,7 +299,14 @@ public class UserService {
 	
 	public ResponseDTO<?> asign(UserSignDTO dto){
 		try {
-			UserEntity userEntities = UserEntity.builder()
+			
+			UserEntity userEntities = userRepository.findByEmail(dto.getEmail());
+			
+			if(userEntities != null) {
+				throw new Exception("이미 가입한 이메일입니다.");
+			}
+			
+			userEntities = UserEntity.builder()
 													.create_at(ZonedDateTime.now())
 													.dateBirth(dto.getBirthDate())
 													.email(dto.getEmail())
@@ -378,4 +385,76 @@ public class UserService {
 		}
 	}
 	
+	
+	public ResponseDTO<?> userInfo(String userJson){
+		try {
+			JwtDTO jwtDto = UtilService.parseJsonToDto(userJson, JwtDTO.class);
+			if(jwtDto==null) {
+				throw new Exception("토큰에러");
+			}
+			UserEntity userEntity = userRepository.findById(jwtDto.getSid()).orElse(null);
+			if(userEntity==null) {
+				throw new Exception("유저에러");
+			}
+			
+			userEntity.setCreate_at(null);
+			userEntity.setPassword(null);
+			
+			return ResponseDTO.<UserEntity>builder()
+																.errFlag(false)
+																.data(userEntity)
+																.resDate(ZonedDateTime.now())
+																.build();
+					
+		}catch (Exception e) {
+			// TODO: handle exception
+			ResponseDTO<String> ret = ResponseDTO.<String>builder()
+					.errFlag(true)
+					.resDate(ZonedDateTime.now())
+					.data(e.getMessage())
+					.build();
+			
+			log.error("UserService.userInfo : {}",e);
+			
+			return ret;
+		}
+	}
+
+	public ResponseDTO<?> userSaveNameBirth(String userJson,String name,String dateBirth){
+		try {
+			JwtDTO jwtDto = UtilService.parseJsonToDto(userJson, JwtDTO.class);
+			if(jwtDto==null) {
+				throw new Exception("토큰에러");
+			}
+			UserEntity userEntity = userRepository.findById(jwtDto.getSid()).orElse(null);
+			if(userEntity==null) {
+				throw new Exception("유저에러");
+			}
+			if(dateBirth!=null) {
+				userEntity.setDateBirth(dateBirth);
+			}
+			if(name!=null) {
+				userEntity.setName(name);
+			}
+			userRepository.save(userEntity);
+			return ResponseDTO.<UserEntity>builder()
+					.errFlag(false)
+					.data(userEntity)
+					.resDate(ZonedDateTime.now())
+					.build();
+		}catch (Exception e) {
+			// TODO: handle exception
+			ResponseDTO<String> ret = ResponseDTO.<String>builder()
+					.errFlag(true)
+					.resDate(ZonedDateTime.now())
+					.data(e.getMessage())
+					.build();
+			
+			log.error("UserService.userSaveNameBirth : {}",e);
+			
+			return ret;
+		}
+	}
+	
+
 }
