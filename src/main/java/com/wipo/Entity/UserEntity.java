@@ -5,6 +5,8 @@ import java.util.Date;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -37,7 +39,7 @@ public class UserEntity {
 	    private String password; 
 
 	    @Column(name = "login_type",nullable = false ,length=1)
-	    private String login_type;
+	    private String  logintype;
 	    
 	    @Column(name = "dateBirth",length = 20)
 	    private String dateBirth;

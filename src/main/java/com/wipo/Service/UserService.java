@@ -79,7 +79,7 @@ public class UserService {
 								.refresh_token(tokenDto.getRefresh_token())
 								.refresh_token_expires_in(tokenDto.getRefresh_token_expires_in())
 								.sid(userEntities.getSid())
-								.type(userEntities.getLogin_type())
+								.type(userEntities.getLogintype())
 								.build();
 			
 			String jwtToken = jwtTokenProvider.generateToken(jwtDto);
@@ -127,7 +127,7 @@ public class UserService {
 								.create_at(ZonedDateTime.now())
 								.email(email)
 								.isPrivacy(true)
-								.login_type(login_type) // type kakao:K google:G
+								.logintype(login_type) // type kakao:K google:G
 								.name(name)
 								.password(access_token)
 								.build();
@@ -179,7 +179,7 @@ public class UserService {
 			.refresh_token(tokenDto.getRefresh_token())
 			.refresh_token_expires_in(tokenDto.getExpires_in())
 			.sid(userInfo.getSid())
-			.type(userInfo.getLogin_type())
+			.type(userInfo.getLogintype())
 			.build();
 
 			String jwtToken = jwtTokenProvider.generateToken(jwtDto);
@@ -208,6 +208,10 @@ public class UserService {
 	public ResponseDTO<?> emailValid(String email, String code){
 		try {
 			boolean errFlag = UtilService.validateAuthEmail(email, code);
+			
+			if(errFlag) {
+				throw new Exception("인증실패");
+			}
 			
 			return ResponseDTO.<Boolean>builder()
 					.errFlag(errFlag)
@@ -311,7 +315,7 @@ public class UserService {
 													.dateBirth(dto.getBirthDate())
 													.email(dto.getEmail())
 													.isPrivacy(true)
-													.login_type("W")
+													.logintype("W")
 													.name(dto.getName())
 													.password(dto.getPassword())
 													.build();
@@ -358,7 +362,7 @@ public class UserService {
 					.refresh_token(null)
 					.refresh_token_expires_in(10800L)
 					.sid(userEntities.get().getSid())
-					.type(userEntities.get().getLogin_type())
+					.type(userEntities.get().getLogintype())
 					.build();
 
 			String jwtToken = jwtTokenProvider.generateToken(jwtDto);
@@ -456,5 +460,89 @@ public class UserService {
 		}
 	}
 	
+	public ResponseDTO<String> findEmail(String name,String dateBirth){
+		try {
+			UserEntity userEntities = userRepository.findByNameAndDateBirthAndLogintype(name, dateBirth,"W").orElse(null);
+			if(userEntities==null) {
+				throw new Exception("사용자정보가 없습니다");
+			}
+			return ResponseDTO.<String>builder()
+					.errFlag(false)
+					.data(userEntities.getEmail())
+					.resDate(ZonedDateTime.now())
+					.build(); 
+		}catch (Exception e) {
+			// TODO: handle exception
+			ResponseDTO<String> ret = ResponseDTO.<String>builder()
+					.errFlag(true)
+					.resDate(ZonedDateTime.now())
+					.data(e.getMessage())
+					.build();
+			
+			log.error("UserService.findEmail : {}",e);
+			
+			return ret;
+		}
+	}
 
+	public ResponseDTO<?> findPass(String email,String name){
+		try {
+			UserEntity userEntities = userRepository.findByEmailAndNameAndLogintype(email, name,"W").orElse(null);
+			if(userEntities==null) {
+				throw new Exception("사용자정보가 없습니다");
+			}
+			
+			ResponseDTO<?> emailRet = emailAuth(userEntities.getEmail());
+			
+			if(emailRet.isErrFlag()) {
+				throw new Exception("이메일 전송에러");
+			}
+			
+			return ResponseDTO.builder()
+					.errFlag(false)
+					.data(emailRet.getData())
+					.resDate(ZonedDateTime.now())
+					.build(); 
+		}catch (Exception e) {
+			// TODO: handle exception
+			ResponseDTO<String> ret = ResponseDTO.<String>builder()
+					.errFlag(true)
+					.resDate(ZonedDateTime.now())
+					.data(e.getMessage())
+					.build();
+			
+			log.error("UserService.findPass : {}",e);
+			
+			return ret;
+		}
+	}
+
+	public ResponseDTO<?> changePass(String email,String password){
+		try {
+			UserEntity userEntities = userRepository.findByEmailAndLogintype(email, "W").orElse(null);
+			if(userEntities==null) {
+				throw new Exception("사용자정보가 없습니다");
+			}
+			
+			userEntities.setPassword(password);
+			userEntities = userRepository.save(userEntities);
+			
+			return ResponseDTO.builder()
+					.errFlag(false)
+					.resDate(ZonedDateTime.now())
+					.build(); 
+		}catch (Exception e) {
+			// TODO: handle exception
+			ResponseDTO<String> ret = ResponseDTO.<String>builder()
+					.errFlag(true)
+					.resDate(ZonedDateTime.now())
+					.data(e.getMessage())
+					.build();
+			
+			log.error("UserService.findPass : {}",e);
+			
+			return ret;
+		}
+	}
+	
 }

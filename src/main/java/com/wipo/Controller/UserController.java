@@ -209,4 +209,58 @@ public class UserController {
 		}
 	}
 
+	@GetMapping("/findEmail")
+	public ResponseEntity<?> findEmail(@RequestParam(required = true,name = "name")String name,
+															@RequestParam(required = true,name="dateBirth")String dateBirth){
+		try {
+			ResponseDTO<String> ret = userService.findEmail(name, dateBirth);
+			if(ret.isErrFlag()) {
+				return new ResponseEntity<>(ret,HttpStatus.BAD_REQUEST);
+			}else {
+				return new ResponseEntity<>(ret,HttpStatus.OK);
+			}
+		}catch (Exception e) {
+			// TODO: handle exception
+			log.error("UserController.findEmail : ",e);
+			
+			return ResponseEntity.badRequest().body("로그인서버에러");
+		}
+	}
+	@GetMapping("/findPass")
+	public ResponseEntity<?> findPass(@RequestParam(required = true,name = "email")String email,
+															@RequestParam(required = true,name="name")String name){
+		try {
+			ResponseDTO<?> ret = userService.findPass(email, name);
+			if(ret.isErrFlag()) {
+				return new ResponseEntity<>(ret,HttpStatus.BAD_REQUEST);
+			}else {
+				return new ResponseEntity<>(ret,HttpStatus.OK);
+			}
+		}catch (Exception e) {
+			// TODO: handle exception
+			log.error("UserController.findPass : ",e);
+			
+			return ResponseEntity.badRequest().body("로그인서버에러");
+		}
+	}
+	
+	@GetMapping("/changePass")
+	public ResponseEntity<?> changePass(@RequestParam(required = true,name = "email")String email,
+															@RequestParam(required = true,name="password")String password){
+		try {
+			ResponseDTO<?> ret = userService.changePass(email, password);
+			if(ret.isErrFlag()) {
+				return new ResponseEntity<>(ret,HttpStatus.BAD_REQUEST);
+			}else {
+				return new ResponseEntity<>(ret,HttpStatus.OK);
+			}
+		}catch (Exception e) {
+			// TODO: handle exception
+			log.error("UserController.changePass : ",e);
+			
+			return ResponseEntity.badRequest().body("로그인서버에러");
+		}
+	}
+
+	
 }
