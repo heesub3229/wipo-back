@@ -58,11 +58,12 @@ jobs:
                 target: /home/ec2-user/
                 
          - name: Restart Application
-           uses: appleboy/ssh-action@v0.1.3
+           uses: appleboy/ssh-action@master
            with:
                 host: ec2-52-78-191-119.ap-northeast-2.compute.amazonaws.com
                 username: ec2-user
                 key: ${{ secrets.EC2_SSH_KEY }}
+                port: 22
                 cipher: "aes256-ctr"
                 script: |
                         pkill -f 'java -jar' || true
