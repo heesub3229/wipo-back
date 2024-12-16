@@ -64,7 +64,6 @@ jobs:
                 username: ec2-user
                 key: ${{ secrets.EC2_SSH_KEY }}
                 port: 22
-                cipher: "aes256-ctr"
                 script: |
                         pkill -f 'java -jar' || true
                         sleep 3
