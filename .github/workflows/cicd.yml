@@ -53,8 +53,8 @@ jobs:
                 host: ec2-52-78-191-119.ap-northeast-2.compute.amazonaws.com
                 username: ec2-user
                 key: ${{ secrets.EC2_SSH_KEY }}
-                source: build/libs/app.jar
-                target: /home/ec2-user/app.jar
+                source: build/libs/wipo-0.0.1-SNAPSHOT.jar
+                target: /home/ec2-user/wipo-0.0.1-SNAPSHOT.jar
                 
           - name: Restart Application
             uses: appleboy/ssh-action@v0.1.3
@@ -64,4 +64,4 @@ jobs:
                 key: ${{ secrets.EC2_SSH_KEY }}
                 script: |
                   pkill -f 'java -jar' || true
-                  nohup java -jar /home/ec2-user/app.jar > app.log 2>&1 &
+                  nohup java -jar /home/ec2-user/wipo-0.0.1-SNAPSHOT.jar > app.log 2>&1 &
