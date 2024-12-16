@@ -32,6 +32,9 @@ jobs:
          - name: Debug application.properties
            run: cat src/main/resources/application.properties
            
+         - name: Debug SSH Key
+           run: echo "${{ secrets.EC2_SSH_KEY }}" | wc -c
+
          - name: Build with gradlew
            run: |
                 ./gradlew clean build
