@@ -35,7 +35,7 @@ public class UserController {
 	
 	@GetMapping("/")
 	public ResponseEntity<?> testApi(){
-		return new ResponseEntity<>("Hello World",HttpStatus.OK); 
+		return new ResponseEntity<>("Hello World2",HttpStatus.OK); 
 	}
 	
 	//카카오 로그인
