@@ -50,7 +50,7 @@ jobs:
 
            
          - name:  Deploy to EC2
-           uses: appleboy/scp-action@v0.2.1
+           uses: appleboy/scp-action@v0.1.4
            with:
                 host: ec2-52-78-191-119.ap-northeast-2.compute.amazonaws.com
                 username: ec2-user
