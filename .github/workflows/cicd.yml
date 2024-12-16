@@ -66,4 +66,4 @@ jobs:
                 cipher: "aes256-ctr"
                 script: |
                         pkill -f 'java -jar' || true
-                        nohup java -jar /home/ec2-user/wipo-0.0.1-SNAPSHOT.jar > /home/ec2-user/app.log 2>&1 &
+                        nohup java -jar /home/ec2-user/build/libs/wipo-0.0.1-SNAPSHOT.jar > /home/ec2-user/app.log 2>&1 &
