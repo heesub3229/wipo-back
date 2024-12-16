@@ -49,13 +49,21 @@ jobs:
                 echo "artifact=$artifact" >> $GITHUB_ENV
 
            
-         - name: Beanstalk Deploy
-           uses: einaregilsson/beanstalk-deploy@v20
+         - name:  Deploy to EC2
+           uses: appleboy/scp-action@v0.2.1
            with:
-                aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
-                aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-                application_name: wipo-back
-                environment_name: wipo-back-env
-                version_label: github-action-${{steps.current-time.outputs.formattedTime}}
-                region: ap-northeast-2
-                deployment_package: ${{env.artifact}}
+                host: ec2-52-78-191-119.ap-northeast-2.compute.amazonaws.com
+                username: ec2-user
+                key: ${{ secrets.EC2_SSH_KEY }}
+                source: build/libs/app.jar
+                target: /home/ec2-user/app.jar
+                
+          - name: Restart Application
+            uses: appleboy/ssh-action@v0.1.3
+            with:
+                host: ec2-52-78-191-119.ap-northeast-2.compute.amazonaws.com
+                username: ec2-user
+                key: ${{ secrets.EC2_SSH_KEY }}
+                script: |
+                  pkill -f 'java -jar' || true
+                  nohup java -jar /home/ec2-user/app.jar > app.log 2>&1 &
