@@ -57,7 +57,7 @@ jobs:
                 host: ec2-52-78-191-119.ap-northeast-2.compute.amazonaws.com
                 username: ec2-user
                 key: ${{ secrets.EC2_SSH_KEY }}
-                debug:true
+                debug: true
                 script: |
                         if [ -f "/home/ec2-user/wipo-0.0.1-SNAPSHOT.jar" ]; then
                           rm -f /home/ec2-user/wipo-0.0.1-SNAPSHOT.jar
