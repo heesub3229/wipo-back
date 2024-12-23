@@ -2,6 +2,8 @@ package com.wipo.Service;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
@@ -136,4 +138,27 @@ public class UtilService {
 		}
 	}
 	
+	
+	public static String getFilenameToDate(String filename) {
+		String ret = "";
+		
+		try {
+			int dotIndex = filename.lastIndexOf('.');
+			String namePart = (dotIndex != -1) ? filename.substring(0, dotIndex) : filename;
+	        String extensionPart = (dotIndex != -1) ? filename.substring(dotIndex) : "";
+
+	        // 현재 시간 가져오기 (분초 이하 마이크로초까지)
+	        ZonedDateTime now = ZonedDateTime.now();
+	        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("mmssSSS");
+
+	        // 새로운 파일명 생성
+	        ret = namePart+"_"+now.format(formatter)+extensionPart;
+	        
+		}catch (Exception e) {
+			// TODO: handle exception
+			log.error("UtilService.getFileExtenstion : {}",e);
+			ret = "";
+		}
+		return ret;
+	}
 }

@@ -1,4 +1,5 @@
 <configuration>
+	<property name="LOG_PATH" value="./logs" />
     <!-- 콘솔에 출력하는 Appender 설정 -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
@@ -9,7 +10,7 @@
     <appender name="ROLLING_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
          <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <!-- 날짜별로 구분된 파일 이름 형식 설정 -->
-            <fileNamePattern>logs/wipo_log_%d{yyyyMMdd}.log</fileNamePattern>
+            <fileNamePattern>${LOG_PATH}/wipo_log_%d{yyyyMMdd}.log</fileNamePattern>
             <maxHistory>30</maxHistory> <!-- 최대 보관 일수 설정 (예: 30일) -->
         </rollingPolicy>
         <encoder>

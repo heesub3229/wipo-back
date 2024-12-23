@@ -2,11 +2,14 @@ package com.wipo.Service;
 
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.wipo.Appconfig.JwtTokenProvider;
 import com.wipo.DTO.EmailAuthCodeDTO;
@@ -18,6 +21,7 @@ import com.wipo.DTO.KakaoUserDTO;
 import com.wipo.DTO.ResponseDTO;
 import com.wipo.DTO.UserSignDTO;
 import com.wipo.Entity.UserEntity;
+import com.wipo.Entity.UserRelationEntity;
 import com.wipo.Repository.UserRepository;
 
 import lombok.extern.slf4j.Slf4j;
@@ -35,6 +39,8 @@ public class UserService {
 	
 	@Autowired
 	private JwtTokenProvider jwtTokenProvider;
+	@Autowired
+	private RelationService relationService;
 	
 	public ResponseDTO<String> kakaoLogin(String code){
 		
@@ -540,6 +546,45 @@ public class UserService {
 					.build();
 			
 			log.error("UserService.findPass : {}",e);
+			
+			return ret;
+		}
+	}
+	
+	@Transactional
+	public ResponseDTO<?> setFriendInfo(Long  userSid,List<Long> friendSid){
+		try {
+			List<UserEntity> friendArray = new ArrayList<UserEntity>();
+			UserEntity userEntity = userRepository.findById(userSid).orElse(null);
+			if(userEntity==null) {
+				throw new Exception("사용자에러");
+			}
+			for(Long row: friendSid) {
+				UserEntity friendEntity = userRepository.findById(row).orElse(null);
+				if(friendEntity ==null) {
+					throw new Exception("팔로우목록이 잘못되었습니다.");
+				}
+				UserRelationEntity relEntity = relationService.setUserRelationSave(userEntity, friendEntity);
+				if(relEntity==null) {
+					throw new Exception("팔로우목록이 잘못되었습니다.");
+				}
+				friendArray.add(friendEntity);
+			}
+			return ResponseDTO.<List<UserEntity>>builder()
+					.data(friendArray)
+					.errFlag(false)
+					.resDate(ZonedDateTime.now())
+					.build();
+					
+		}catch (Exception e) {
+			// TODO: handle exception
+			ResponseDTO<String> ret = ResponseDTO.<String>builder()
+					.errFlag(true)
+					.resDate(ZonedDateTime.now())
+					.data(e.getMessage())
+					.build();
+			
+			log.error("UserService.setFriendInfo : {}",e);
 			
 			return ret;
 		}
