@@ -1,7 +1,9 @@
 package com.wipo.Service;
 
+import java.lang.annotation.Retention;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -10,8 +12,12 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wipo.Appconfig.JwtTokenProvider;
+import com.wipo.DTO.AlertSendDTO;
 import com.wipo.DTO.EmailAuthCodeDTO;
 import com.wipo.DTO.GoogleInfoDTO;
 import com.wipo.DTO.GoogleTokenDTO;
@@ -19,11 +25,14 @@ import com.wipo.DTO.JwtDTO;
 import com.wipo.DTO.KakaoTokenDTO;
 import com.wipo.DTO.KakaoUserDTO;
 import com.wipo.DTO.ResponseDTO;
+import com.wipo.DTO.SendUserInfoDTO;
 import com.wipo.DTO.UserSignDTO;
+import com.wipo.Entity.FileEntity;
 import com.wipo.Entity.UserEntity;
 import com.wipo.Entity.UserRelationEntity;
 import com.wipo.Repository.UserRepository;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 
@@ -41,6 +50,13 @@ public class UserService {
 	private JwtTokenProvider jwtTokenProvider;
 	@Autowired
 	private RelationService relationService;
+	
+	private final FileService fileService;
+	
+	public UserService(FileService fileService) {
+		this.fileService = fileService;
+	}
+	
 	
 	public ResponseDTO<String> kakaoLogin(String code){
 		
@@ -93,7 +109,7 @@ public class UserService {
 			ResponseDTO<String> ret = ResponseDTO.<String>builder()
 										.errFlag(false)
 										.resDate(ZonedDateTime.now())
-										.data(jwtToken)
+										.data(jwtToken+";"+jwtDto.getRefresh_token_expires_in().toString())
 										.build();
 			
 			return ret;
@@ -117,6 +133,7 @@ public class UserService {
 		
 	}
 	
+	@Transactional
 	private UserEntity snsLogin(String login_type,
 								String email,
 								String access_token,
@@ -127,6 +144,9 @@ public class UserService {
 			if(userEntities != null) {
 				userEntities.setPassword(access_token);
 				userEntities.setPrivacy(true);
+				if(userEntities.getFriendsLength()==null) {
+					userEntities.setFriendsLength(0);
+				}
 				
 			}else {
 				userEntities = UserEntity.builder()
@@ -135,6 +155,7 @@ public class UserService {
 								.isPrivacy(true)
 								.logintype(login_type) // type kakao:K google:G
 								.name(name)
+								.friendsLength(0)
 								.password(access_token)
 								.build();
 				
@@ -193,7 +214,7 @@ public class UserService {
 			ResponseDTO<String> ret = ResponseDTO.<String>builder()
 					.errFlag(false)
 					.resDate(ZonedDateTime.now())
-					.data(jwtToken)
+					.data(jwtToken+";"+jwtDto.getRefresh_token_expires_in().toString())
 					.build();
 
 			return ret;
@@ -355,11 +376,16 @@ public class UserService {
 			if(password == null) {
 				throw new Exception("패스워드 에러");
 			}
-			Optional<UserEntity> userEntities = userRepository.findByEmailAndPassword(email, password);
+			UserEntity userEntities = userRepository.findByEmail(email);
 			
-			if(!userEntities.isPresent()) {
-				throw new Exception("정보 없음");
+			if(userEntities==null) {
+				throw new Exception("회원가입요망");
 			}
+			
+			if(!userEntities.getPassword().equals(password)) {
+				throw new Exception("패스워드 에러");
+			}
+			
 			
 			JwtDTO jwtDto = JwtDTO.builder()
 					.access_token(null)
@@ -367,8 +393,8 @@ public class UserService {
 					.id_token(null)
 					.refresh_token(null)
 					.refresh_token_expires_in(10800L)
-					.sid(userEntities.get().getSid())
-					.type(userEntities.get().getLogintype())
+					.sid(userEntities.getSid())
+					.type(userEntities.getLogintype())
 					.build();
 
 			String jwtToken = jwtTokenProvider.generateToken(jwtDto);
@@ -376,7 +402,7 @@ public class UserService {
 			ResponseDTO<String> ret = ResponseDTO.<String>builder()
 					.errFlag(false)
 					.resDate(ZonedDateTime.now())
-					.data(jwtToken)
+					.data(jwtToken+";"+jwtDto.getRefresh_token_expires_in().toString())
 					.build();
 
 			return ret;
@@ -407,12 +433,32 @@ public class UserService {
 				throw new Exception("유저에러");
 			}
 			
-			userEntity.setCreate_at(null);
 			userEntity.setPassword(null);
 			
-			return ResponseDTO.<UserEntity>builder()
+		    List<UserRelationEntity> friendRelArray = relationService.getUserRelInfo(userEntity);
+		    List<UserRelationEntity> meRelArray = relationService.getFriendRelInfo(userEntity);
+		    List<UserEntity> friendUserArray = new ArrayList<UserEntity>();
+		    
+		    for(UserRelationEntity row: friendRelArray) {
+		    	UserEntity tempEntity = row.getFriend();
+		    	tempEntity.setPassword(null);
+		    	friendUserArray.add(tempEntity);
+		    }
+		    
+		    for(UserRelationEntity row:meRelArray) {
+		    	UserEntity tempEntity = row.getUser();
+		    	tempEntity.setPassword(null);
+		    	friendUserArray.add(tempEntity);
+		    }
+		    
+		    SendUserInfoDTO dto = SendUserInfoDTO.builder()
+		    									.user(userEntity)
+		    									.friend(friendUserArray)
+		    									.build();
+		    
+			return ResponseDTO.<SendUserInfoDTO>builder()
 																.errFlag(false)
-																.data(userEntity)
+																.data(dto)
 																.resDate(ZonedDateTime.now())
 																.build();
 					
@@ -446,7 +492,7 @@ public class UserService {
 			if(name!=null) {
 				userEntity.setName(name);
 			}
-			userRepository.save(userEntity);
+			userEntity = userRepository.save(userEntity);
 			return ResponseDTO.<UserEntity>builder()
 					.errFlag(false)
 					.data(userEntity)
@@ -551,31 +597,23 @@ public class UserService {
 		}
 	}
 	
-	@Transactional
-	public ResponseDTO<?> setFriendInfo(Long  userSid,List<Long> friendSid){
+	public ResponseDTO<?> setFriendUser(Long userSid,Long friendSid){
 		try {
-			List<UserEntity> friendArray = new ArrayList<UserEntity>();
 			UserEntity userEntity = userRepository.findById(userSid).orElse(null);
-			if(userEntity==null) {
-				throw new Exception("사용자에러");
+			UserEntity friendEntity = userRepository.findById(friendSid).orElse(null);
+			if(friendEntity==null) {
+				throw new Exception("사용자정보가 없습니다");
 			}
-			for(Long row: friendSid) {
-				UserEntity friendEntity = userRepository.findById(row).orElse(null);
-				if(friendEntity ==null) {
-					throw new Exception("팔로우목록이 잘못되었습니다.");
-				}
-				UserRelationEntity relEntity = relationService.setUserRelationSave(userEntity, friendEntity);
-				if(relEntity==null) {
-					throw new Exception("팔로우목록이 잘못되었습니다.");
-				}
-				friendArray.add(friendEntity);
+			UserRelationEntity relEntity = relationService.setUserRelationSave(userEntity, friendEntity,"W");
+			if(relEntity==null) {
+				throw new Exception("이미 추가한 친구입니다.");
 			}
-			return ResponseDTO.<List<UserEntity>>builder()
-					.data(friendArray)
+			return ResponseDTO.<UserEntity>builder()
 					.errFlag(false)
 					.resDate(ZonedDateTime.now())
 					.build();
-					
+			
+			
 		}catch (Exception e) {
 			// TODO: handle exception
 			ResponseDTO<String> ret = ResponseDTO.<String>builder()
@@ -584,10 +622,189 @@ public class UserService {
 					.data(e.getMessage())
 					.build();
 			
-			log.error("UserService.setFriendInfo : {}",e);
+			log.error("UserService.setFriendUser : {}",e);
 			
 			return ret;
 		}
 	}
 	
+	public ResponseDTO<?> getFindByUser(Long userSid,String str){
+		try {
+			UserEntity userEntity = userRepository.findById(userSid).orElse(null);
+			if(userEntity ==null) {
+				throw new Exception("유저정보에러");
+			}
+			//내가보낸것
+			List<UserRelationEntity> userTmpArray = relationService.getUserRelInfo(userEntity);
+			List<UserRelationEntity> friendTmpArray = relationService.getFriendRelInfo(userEntity);
+			List<UserEntity> tempArray = new ArrayList<UserEntity>();
+			for(UserRelationEntity row : userTmpArray) {
+				row.getFriend().setPassword(null);
+				tempArray.add(row.getFriend());
+			}
+			
+			for(UserRelationEntity row: friendTmpArray) {
+				row.getUser().setPassword(null);
+				tempArray.add(row.getUser());
+			}
+			
+			
+			List<UserEntity> userArray = userRepository.findByUser(str);
+			userArray.removeIf(user->userEntity.getSid().equals(user.getSid()));
+			for(UserEntity row: tempArray) {
+				
+				userArray.removeIf(user->row.getSid().equals(user.getSid()));
+			}
+			
+			return ResponseDTO.<List<UserEntity>>builder()
+					.errFlag(false)
+					.resDate(ZonedDateTime.now())
+					.data(userArray)
+					.build();
+			
+		}catch (Exception e) {
+			// TODO: handle exception
+			ResponseDTO<String> ret = ResponseDTO.<String>builder()
+					.errFlag(true)
+					.resDate(ZonedDateTime.now())
+					.data(e.getMessage())
+					.build();
+			
+			log.error("UserService.getFindByUser : {}",e);
+			
+			return ret;
+		}
+	}
+	
+	public ResponseDTO<?> getUserRelInfo(Long paramSid,Long userSid){
+		try {
+			UserRelationEntity relEntity = relationService.getRelInfo(paramSid);
+			if(relEntity == null) {
+				throw new Exception("친구정보에러");
+			}
+			UserEntity userEntity = null;
+			if(relEntity.getUser().getSid()==userSid) {
+				
+				userEntity = relEntity.getFriend();
+			}else {
+				userEntity = relEntity.getUser();
+			}
+			
+			userEntity.setPassword(null);
+			return ResponseDTO.<UserEntity>builder()
+					.errFlag(false)
+					.resDate(ZonedDateTime.now())
+					.data(userEntity)
+					.build();
+		}catch (Exception e) {
+			// TODO: handle exception
+			ResponseDTO<String> ret = ResponseDTO.<String>builder()
+					.errFlag(true)
+					.resDate(ZonedDateTime.now())
+					.data(e.getMessage())
+					.build();
+			
+			log.error("UserService.getUserRelInfo : {}",e);
+			
+			return ret;
+		}
+	}
+	
+	
+	public ResponseDTO<?> setRelApprove(Long paramSid, String approveFlag){
+		try {
+			String str = "";
+			UserRelationEntity relEntity = relationService.setRelApprove(paramSid, approveFlag);
+			
+			if(relEntity==null) {
+				throw new Exception("저장에러");
+			}
+			
+			relEntity.getFriend().setPassword(null);
+			relEntity.getUser().setPassword(null);
+			
+			SseEmitter client = AlertService.validClient(relEntity.getUser().getSid());
+			if(client!= null) {
+				if(relEntity.getApprove_flag().equals("Y")){
+					str = "님이 친구 요청을 수락했습니다.";
+				}else {
+					str = "님이 친구 요청을 거절했습니다.";
+				}
+				DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy. MM. dd");
+				AlertSendDTO dto = AlertSendDTO.builder()
+												.approve_flag(relEntity.getApprove_flag())
+												.confirm_flag(relEntity.getConfirm_flag())
+												.content(relEntity.getFriend().getName()+str)
+												.date(relEntity.getUpdate_at().format(formatter))
+												.sid(relEntity.getSid())
+												.title(relEntity.getFriend().getEmail())
+												.type("F")
+												.build();
+				
+				
+				
+				ObjectMapper mapper = new ObjectMapper();
+				String retJson = mapper.writeValueAsString(dto);
+				String friendJson = mapper.writeValueAsString(relEntity.getFriend());
+				client.send(SseEmitter.event().name("alert").data(retJson));
+				client.send(SseEmitter.event().name("friend").data(friendJson));
+			}
+			return ResponseDTO.<UserEntity>builder()
+					.errFlag(false)
+					.data(relEntity.getUser())
+					.resDate(ZonedDateTime.now())
+					.build();
+			
+		}catch (Exception e) {
+			// TODO: handle exception
+			ResponseDTO<String> ret = ResponseDTO.<String>builder()
+					.errFlag(true)
+					.resDate(ZonedDateTime.now())
+					.data(e.getMessage())
+					.build();
+			
+			log.error("UserService.setRelApprove : {}",e);
+			
+			return ret;
+		}
+	}
+	
+	public ResponseDTO<?> setProfile(Long userSid,String dateBirth,String color,MultipartFile file){
+		try {
+			FileEntity fileEntity  = null;
+			if(file!=null) {
+				fileEntity = fileService.setFileDBSaveOne(file);
+				if(fileEntity==null) {
+					throw new Exception("파일 저장에러");
+				}
+			}
+			
+			UserEntity userEntity = userRepository.findById(userSid).orElse(null);
+			if(userEntity == null) {
+				throw new Exception("새로고침 필요");
+			}
+			userEntity.setDateBirth(dateBirth);
+			userEntity.setProfileColor(color);
+			userEntity.setFile(fileEntity);
+			userEntity = userRepository.save(userEntity);
+			userEntity.setPassword(null);
+			
+			return ResponseDTO.<UserEntity>builder()
+					.errFlag(false)
+					.resDate(ZonedDateTime.now())
+					.data(userEntity)
+					.build();
+		}catch (Exception e) {
+			// TODO: handle exception
+			ResponseDTO<String> ret = ResponseDTO.<String>builder()
+					.errFlag(true)
+					.resDate(ZonedDateTime.now())
+					.data(e.getMessage())
+					.build();
+			
+			log.error("UserService.setProfile : {}",e);
+			
+			return ret;
+		}
+	}
 }

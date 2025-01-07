@@ -62,6 +62,12 @@ public class UserEntity {
 	    @OneToOne(optional = true)
 	    @JoinColumn(name = "file_sid", referencedColumnName = "sid",nullable = true)
 	    private FileEntity file;
+	    
+	    @Column(name="friendsLength")
+	    private Integer friendsLength;
 	   
+	    public void incrementFriends() {
+	    	this.friendsLength++;
+	    }
 	    
 }

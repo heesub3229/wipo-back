@@ -1,5 +1,6 @@
 package com.wipo.Appconfig;
 
+import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.Map;
 
@@ -25,19 +26,23 @@ public class JwtTokenProvider {
 	
 	@Value("${jwt.secret}")
 	private String secretKey;
-	
-	@Autowired
-	private UtilService utilService;
-	
+		
 	private final ObjectMapper mapper = new ObjectMapper();
 		
 	public String generateToken(JwtDTO dto) {
 		try {
 			String dtoJson = mapper.writeValueAsString(dto);
+			
+			ZonedDateTime now = ZonedDateTime.now();
+			ZonedDateTime expirationTime = now.plusSeconds(dto.getRefresh_token_expires_in());
+			
+			Date issuedAt = Date.from(now.toInstant());
+			Date expiration = Date.from(expirationTime.toInstant());
+			
 			return Jwts.builder()
 					.claim("user", dtoJson)
-					.setIssuedAt(new Date())
-					.setExpiration(new Date(System.currentTimeMillis()+ dto.getRefresh_token_expires_in()))
+					.setIssuedAt(issuedAt)
+					.setExpiration(expiration)
 					.signWith(Keys.hmacShaKeyFor(secretKey.getBytes()))
 					.compact();
 		}catch (Exception e) {
@@ -50,14 +55,17 @@ public class JwtTokenProvider {
 	
 	
 	public boolean validateJwt(String token) {
-		String ret = "";
 		try {
 			Claims claims = validateToken(token);
 			if(claims==null) {
 				throw new Exception();
 			}
-			boolean exfireFlag = claims.getExpiration().after(new Date());
-			if(!exfireFlag) {
+			
+			ZonedDateTime now = ZonedDateTime.now();
+			Date date = Date.from(now.toInstant());
+			
+			Date expiration = claims.getExpiration();
+			if(expiration == null || expiration.before(date)) {
 				throw new Exception();
 			}
 			

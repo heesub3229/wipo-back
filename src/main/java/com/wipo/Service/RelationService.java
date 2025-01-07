@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.wipo.Entity.FileEntity;
 import com.wipo.Entity.FileRelationEntity;
@@ -18,10 +19,10 @@ import com.wipo.Entity.PostRelationEntity;
 import com.wipo.Entity.PostRelationId;
 import com.wipo.Entity.UserEntity;
 import com.wipo.Entity.UserRelationEntity;
-import com.wipo.Entity.UserRelationId;
 import com.wipo.Repository.MapRelationRepository;
 import com.wipo.Repository.PostRelationRepository;
 import com.wipo.Repository.UserRelationRepository;
+import com.wipo.Repository.UserRepository;
 import com.wipo.Repository.fileRelationRepository;
 
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +31,9 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class RelationService {
 
+	@Autowired
+	private UserRepository userRepository;
+	
 	@Autowired
 	private fileRelationRepository fileRelationRepository;
 	
@@ -41,7 +45,7 @@ public class RelationService {
 	
 	@Autowired
 	private PostRelationRepository postRelationRepository;
-	
+		
 	public FileRelationEntity setFileRelationSave(FileEntity fileEntity,PostEntity postEntity){
 		FileRelationEntity ret = new FileRelationEntity();
 		try {
@@ -112,20 +116,36 @@ public class RelationService {
 	}
 	
 	
-	public UserRelationEntity setUserRelationSave(UserEntity userEntity,UserEntity friendEntity) {
-		UserRelationEntity ret = new UserRelationEntity();
+	public UserRelationEntity setUserRelationSave(UserEntity userEntity,UserEntity friendEntity,String flag) {
+		UserRelationEntity ret = null;
 		try {
-			UserRelationId relId = UserRelationId.builder()
-											.friend(friendEntity)
-											.user(userEntity)
-											.build();
-			
-			ret = UserRelationEntity.builder()
-					.create_at(ZonedDateTime.now())
-					.id(relId)
-					.build();
-			
-			ret = userRelationRepository.save(ret);
+			UserRelationEntity tempEntity = userRelationRepository.findByUserToUser(userEntity, friendEntity);
+			if(tempEntity !=null) {
+				if(tempEntity.getApprove_flag().equals("N")) {
+					userRelationRepository.delete(tempEntity);
+					ret = UserRelationEntity.builder()
+							.create_at(ZonedDateTime.now())
+							.approve_flag(flag)
+							.user(userEntity)
+							.friend(friendEntity)
+							.confirm_flag("N")
+							.build();
+					
+					ret = userRelationRepository.save(ret);
+				}else {
+					ret = null;
+				}
+			}else {
+				ret = UserRelationEntity.builder()
+						.create_at(ZonedDateTime.now())
+						.approve_flag(flag)
+						.user(userEntity)
+						.friend(friendEntity)
+						.confirm_flag("N")
+						.build();
+				
+				ret = userRelationRepository.save(ret);
+			}
 			
 		}catch (Exception e) {
 			// TODO: handle exception
@@ -172,5 +192,95 @@ public class RelationService {
 		return ret;
 	}
 	
+	public List<UserRelationEntity> getFriendRelInfo(UserEntity userEntity){
+		List<UserRelationEntity> ret = null;
+		try {
+			ret = userRelationRepository.findByIdAndFriend(userEntity);
+		}catch (Exception e) {
+			// TODO: handle exception
+			log.error("RelationService.getFriendRelInfo : {}",e);
+			ret = null;
+		}
+		return ret;
+	}
+	
+	public List<UserRelationEntity> getFriendRelWait(UserEntity userEntity){
+		List<UserRelationEntity> ret = null;
+		try {
+			ret = userRelationRepository.findByFriendAndWait(userEntity);
+		}catch (Exception e) {
+			// TODO: handle exception
+			log.error("RelationService.getFriendRelWait : {}",e);
+			ret = null;
+		}
+		
+		return ret;
+		
+	}
+	
+	public UserRelationEntity getRelInfo(Long sid) {
+		UserRelationEntity ret = null;
+		try {
+			ret = userRelationRepository.findById(sid).orElse(null);
+			if(ret.getConfirm_flag().equals("N")) {
+				ret.setConfirm_flag("Y");
+			}
+			ret = userRelationRepository.save(ret);
+		}catch (Exception e) {
+			// TODO: handle exception
+			log.error("RelationService.getRelInfo : {}",e);
+			ret = null;
+		}
+		return ret;
+	}
+	
+	@Transactional
+	public UserRelationEntity setRelApprove(Long sid,String approveFlag) {
+		UserRelationEntity ret = null;
+		try {
+			ret = userRelationRepository.findById(sid).orElse(null);
+			ret.setConfirm_flag("N");
+			ret.setApprove_flag(approveFlag);
+			ret.setUpdate_at(ZonedDateTime.now());
+			ret = userRelationRepository.save(ret);
+			if(ret.getApprove_flag().equals("Y")) {
+				
+				if(ret.getUser().getFriendsLength()==null) {
+					ret.getUser().setFriendsLength(0);
+				}
+				if(ret.getFriend().getFriendsLength()==null) {
+					ret.getFriend().setFriendsLength(0);
+				}
+				ret.getUser().incrementFriends();
+				ret.getFriend().incrementFriends();
+				
+				UserEntity userEntity = userRepository.save(ret.getUser());
+				UserEntity friendEntity = userRepository.save(ret.getFriend());
+				
+				ret.setUser(userEntity);
+				ret.setFriend(friendEntity);
+			}
+		}catch (Exception e) {
+			// TODO: handle exception
+			log.error("RelationService.setRelApprove : {}",e);
+			ret = null;
+		}
+		return ret;
+	}
+	
+	public List<UserRelationEntity> getRelApproveYesOrNo(UserEntity userEntity){
+		List<UserRelationEntity> ret = new ArrayList<UserRelationEntity>();
+		try {
+			ZonedDateTime oneWeekAgo = ZonedDateTime.now().minusWeeks(1);
+			ret = userRelationRepository.findByApproveYesOrNoConYes(userEntity,oneWeekAgo);
+			List<UserRelationEntity> ret2 = userRelationRepository.findByApproveYesOrNoConNo(userEntity);
+			ret.addAll(ret2);
+		}catch (Exception e) {
+			// TODO: handle exception
+			log.error("RelationService.getRelUserToFriend : {}",e);
+			ret = null;
+		}
+		return ret;
+	}
 	
 }

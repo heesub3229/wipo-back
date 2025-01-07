@@ -13,6 +13,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.wipo.Entity.FileEntity;
@@ -34,6 +35,7 @@ public class FileService {
 	@Autowired
 	public RelationService relationService;
 	
+	@Transactional
 	public List<FileEntity> setFileDBSave(List<MultipartFile> files){
 		List<FileEntity> ret = new ArrayList<FileEntity>();
 		try {
@@ -57,6 +59,23 @@ public class FileService {
 		}
 		
 		
+		return ret;
+	}
+	
+	public FileEntity setFileDBSaveOne(MultipartFile file) {
+		FileEntity ret = null;
+		try {
+			ret = setFileSave(file);
+			if(ret ==null) {
+				throw new Exception("파일저장에러");
+			}
+			ret = fileRepository.save(ret);
+			
+		}catch (Exception e) {
+			// TODO: handle exception
+			log.error("FileService.setFileDBSaveOne : {}",e);
+			ret = null;
+		}
 		return ret;
 	}
 	
