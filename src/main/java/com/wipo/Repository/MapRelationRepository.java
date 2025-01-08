@@ -6,13 +6,13 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.wipo.Entity.MapRelationEntity;
-import com.wipo.Entity.MapRelationId;
 import com.wipo.Entity.PostEntity;
+import com.wipo.Entity.UserEntity;
 
 @Repository
-public interface MapRelationRepository extends JpaRepository<MapRelationEntity, MapRelationId> {
+public interface MapRelationRepository extends JpaRepository<MapRelationEntity, Long> {
 	
-	@Query("SELECT m FROM MapRelationEntity m WHERE m.id.user_sid = :userSid AND m.post = :postEntity")
-	MapRelationEntity findByPostANDUser(@Param("userSid")Long userSid,@Param("postEntity")PostEntity postEntity);
+	@Query("SELECT m FROM MapRelationEntity m WHERE m.user = :user AND m.post = :post")
+	MapRelationEntity findByPostANDUser(@Param("user")UserEntity user,@Param("post")PostEntity postEntity);
 
 }

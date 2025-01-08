@@ -7,6 +7,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -27,10 +28,10 @@ public class UserRelationEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long sid; 
 	
-	@OneToOne(optional = false)
+	@ManyToOne(optional = false)
 	@JoinColumn(name = "user_sid", referencedColumnName = "sid")
 	private UserEntity user;
-	@OneToOne(optional = false)
+	@ManyToOne(optional = false)
 	@JoinColumn(name = "friend_sid", referencedColumnName = "sid")
 	private UserEntity friend;
 	

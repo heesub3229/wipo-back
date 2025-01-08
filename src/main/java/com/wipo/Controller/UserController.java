@@ -411,7 +411,7 @@ public class UserController {
 		}
 	}
 	
-	@PostMapping(value="/setProfile", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
+	@PostMapping(value="/setProfile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<?> setProfile(@RequestHeader("Authorization") String jwt,
 															@RequestPart(value="dateBirth",required = false)String dateBirth,
 															@RequestPart(value="color",required = false)String color,

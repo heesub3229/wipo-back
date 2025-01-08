@@ -1,36 +1,29 @@
 package com.wipo.Service;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wipo.DTO.PostSaveDTO;
 import com.wipo.DTO.PostSendDTO;
 import com.wipo.DTO.ResponseDTO;
 import com.wipo.Entity.FileEntity;
 import com.wipo.Entity.FileRelationEntity;
-import com.wipo.Entity.FileRelationId;
 import com.wipo.Entity.MapEntity;
 import com.wipo.Entity.MapRelationEntity;
 import com.wipo.Entity.PostEntity;
 import com.wipo.Entity.PostRelationEntity;
 import com.wipo.Entity.UserEntity;
-import com.wipo.Repository.FileRepository;
 import com.wipo.Repository.MapRepository;
 import com.wipo.Repository.PostRepository;
 import com.wipo.Repository.UserRepository;
@@ -53,6 +46,12 @@ public class PostService {
 	
 	@Autowired
 	private FileService fileService;
+	
+	private final RelationService relationService;
+	
+	public PostService(RelationService relationService) {
+		this.relationService = relationService;
+	}
 	
 	@Transactional
 	public ResponseDTO<?> setPostSave(PostSaveDTO dto) {
@@ -98,7 +97,7 @@ public class PostService {
 				if(freindEntity ==null) {
 					throw new Exception("친구정보가잘못되었습니다");
 				}
-				userArray.add(userEntity);
+				userArray.add(freindEntity);
 			}
 			//게시물저장
 			postEntity = PostEntity.builder()
@@ -113,38 +112,38 @@ public class PostService {
 			
 			//사진 관계저장
 			for(FileEntity row:fileArray) {
-				FileRelationEntity tempEntity = fileService.relationService.setFileRelationSave(row, postEntity);
+				FileRelationEntity tempEntity = relationService.setFileRelationSave(row, postEntity);
 				if(tempEntity == null) {
 					throw new Exception("사진저장에러");
 				}
 			}
 			//맵-포스트관계저장
-			MapRelationEntity tempMapEntity = fileService.relationService.setMapRelationSave(mapEntity, userEntity, postEntity);
+			MapRelationEntity tempMapEntity = relationService.setMapRelationSave(mapEntity, userEntity, postEntity);
 			if(tempMapEntity==null) {
 				throw new Exception("위치저장에러");
 			}
 			//포스트 - 친구 관계저장
 			for(UserEntity row : userArray) {
-				PostRelationEntity tempPostEntity = fileService.relationService.setPostRelationSave(row, postEntity);
+				PostRelationEntity tempPostEntity = relationService.setPostRelationSave(row, postEntity);
 				if(tempPostEntity == null) {
 					throw new Exception("태그에러");
 				}
 			}
-			List<String> fileBase64Str = new ArrayList<String>();
-			for(FileEntity row:fileArray) {
-				String fileData = fileService.getImageToBase64(row.getFilepath());
-				if(fileData==null) {
-					throw new Exception("파일저장에러");
-				}
-				fileBase64Str.add(fileData);
-			}
-			
 			PostSendDTO res = PostSendDTO.builder()
-											.map(mapEntity)
-											.post(postEntity)
-											.imageArray(fileBase64Str)
-											.build();
-			
+					.type("F")
+					.map(mapEntity)
+					.post(postEntity)
+					.files(fileArray)
+					.build();
+			for(UserEntity row : userArray) {
+				SseEmitter client = AlertService.validClient(row.getSid());
+				if(client!= null) {
+					ObjectMapper mapper = new ObjectMapper();
+					String json = mapper.writeValueAsString(res);
+					client.send(SseEmitter.event().name("postFriend").data(json));
+				}
+			}
+			res.setType("U");
 			ret = ResponseDTO.<PostSendDTO>builder()
 					.errFlag(false)
 					.data(res)
@@ -173,58 +172,50 @@ public class PostService {
 		List<PostSendDTO> ret = new ArrayList<PostSendDTO>();
 		ResponseDTO<?> res = null;
 		try {
-			
+			//내가만든 게시물
 			userEntity = userRepository.findById(userSid).orElse(null);
-			if(page==0) {
-				
-			   
-				
-				pageable = PageRequest.of(page,5,Sort.by("create_at").descending());
-				postPage = postRepository.findByCreateUserSid(userEntity, pageable);
-				for(PostEntity row:postPage.getContent()) {
-					PostSendDTO dto = PostSendDTO.builder()
-													.page(page)
-													.post(row)
-													.build();
-					ret.add(dto);
-				}
-				pageable = PageRequest.of(page+1,5,Sort.by("create_at").descending());
-				postPage = postRepository.findByCreateUserSid(userEntity, pageable);
-				for(PostEntity row:postPage.getContent()) {
-					PostSendDTO dto = PostSendDTO.builder()
-													.page(page+1)
-													.post(row)
-													.build();
-					ret.add(dto);
-				}
-			}else {
-				pageable = PageRequest.of(page,5,Sort.by("create_at").descending());
-				postPage = postRepository.findByCreateUserSid(userEntity, pageable);
-				for(PostEntity row:postPage.getContent()) {
-					PostSendDTO dto = PostSendDTO.builder()
-													.page(page)
-													.post(row)
-													.build();
-					ret.add(dto);
-				}
+			
+			pageable = PageRequest.of(page,10,Sort.by("create_at").descending());
+			postPage = postRepository.findByCreateUserSid(userEntity, pageable);
+			for(PostEntity row:postPage.getContent()) {
+				PostSendDTO dto = PostSendDTO.builder()
+												.post(row)
+												.type("U")
+												.build();
+				ret.add(dto);
 			}
+			
 			
 			if(ret.size()>0) {
 				for(PostSendDTO row : ret) {
 					PostEntity postEntity = row.getPost();
-					List<String> fileStr = fileService.getFileInfo(postEntity.getSid());
-					if(fileStr==null) {
+					List<FileEntity> files = fileService.getFileInfo(postEntity);
+					if(files==null) {
 						throw new Exception("파일조회에러");
 					}
-					MapEntity mapEntity = fileService.relationService.getMapRelInfo(userEntity.getSid(), postEntity);
+					MapEntity mapEntity = relationService.getMapRelInfo(userEntity, postEntity);
 					if(mapEntity==null) {
 						throw new Exception("위치조회에러");
 					}
-					row.setImageArray(fileStr);
+					row.setFiles(files);
 					row.setMap(mapEntity);
 				}
 			}
-						
+				
+			//포스팅한 게시물
+			List<PostEntity> postingEntity = relationService.getPostRelInfo(userEntity, page);
+			for(PostEntity row:postingEntity) {
+				MapEntity mapEntity = relationService.getMapRelInfo(userEntity, row);
+				List<FileEntity> files = fileService.getFileInfo(row);
+				PostSendDTO dto = PostSendDTO.builder()
+												.type("F")
+												.post(row)
+												.map(mapEntity)
+												.files(files)
+												.build();
+				ret.add(dto);
+												
+			}
 			res = ResponseDTO.<List<PostSendDTO>>builder()
 					.errFlag(false)
 					.resDate(ZonedDateTime.now())

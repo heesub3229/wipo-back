@@ -5,18 +5,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.wipo.Entity.FileEntity;
 import com.wipo.Entity.FileRelationEntity;
-import com.wipo.Entity.FileRelationId;
 import com.wipo.Entity.MapEntity;
 import com.wipo.Entity.MapRelationEntity;
-import com.wipo.Entity.MapRelationId;
 import com.wipo.Entity.PostEntity;
 import com.wipo.Entity.PostRelationEntity;
-import com.wipo.Entity.PostRelationId;
 import com.wipo.Entity.UserEntity;
 import com.wipo.Entity.UserRelationEntity;
 import com.wipo.Repository.MapRelationRepository;
@@ -47,19 +48,23 @@ public class RelationService {
 	private PostRelationRepository postRelationRepository;
 		
 	public FileRelationEntity setFileRelationSave(FileEntity fileEntity,PostEntity postEntity){
-		FileRelationEntity ret = new FileRelationEntity();
+		FileRelationEntity ret = null;
 		try {
-			FileRelationId relId = FileRelationId.builder()
-											.file_sid(fileEntity.getSid())
-											.post_sid(postEntity.getSid())
-											.build();
 			
-			ret = FileRelationEntity.builder()
-					.id(relId)
-					.create_at(ZonedDateTime.now())
-					.file(fileEntity)
-					.post(postEntity)
-					.build();
+			ret = fileRelationRepository.findByPostAndFile(postEntity, fileEntity);
+			
+			if(ret == null) {
+				ret = FileRelationEntity.builder()
+						.create_at(ZonedDateTime.now())
+						.file(fileEntity)
+						.post(postEntity)
+						.build();
+			}else {
+				ret.setFile(fileEntity);
+				ret.setPost(postEntity);
+			}
+			
+			
 			ret = fileRelationRepository.save(ret);
 			
 		}catch (Exception e) {
@@ -71,17 +76,21 @@ public class RelationService {
 	}
 	
 	public MapRelationEntity setMapRelationSave(MapEntity mapEntity,UserEntity userEntity,PostEntity postEntity) {
-		MapRelationEntity ret = new MapRelationEntity();
+		MapRelationEntity ret = null;
 		try {
-			MapRelationId relId = MapRelationId.builder()
-											.map_sid(mapEntity.getSid()).user_sid(userEntity.getSid())
-											.build();
+			ret = mapRelationRepository.findByPostANDUser(userEntity, postEntity);
+			if(ret == null) {
+				ret = MapRelationEntity.builder()
+						.create_at(ZonedDateTime.now())
+						.post(postEntity)
+						.user(userEntity)
+						.map(mapEntity)
+						.build();
+			}else {
+				ret.setMap(mapEntity);
+			}
 			
-			ret = MapRelationEntity.builder()
-					.id(relId)
-					.create_at(ZonedDateTime.now())
-					.post(postEntity)
-					.build();
+			
 			ret = mapRelationRepository.save(ret);
 		}catch (Exception e) {
 			// TODO: handle exception
@@ -94,17 +103,17 @@ public class RelationService {
 	
 	
 	public PostRelationEntity setPostRelationSave(UserEntity userEntity,PostEntity postEntity) {
-		PostRelationEntity ret = new PostRelationEntity();
+		PostRelationEntity ret = null;
 		try {
-			PostRelationId relId = PostRelationId.builder()
-											.post(postEntity)
-											.user(userEntity)
-											.build();
+			ret = postRelationRepository.findByUserAndPost(userEntity, postEntity);
+			if(ret ==null) {
+				ret = PostRelationEntity.builder()
+						.post(postEntity)
+						.user(userEntity)
+						.create_at(ZonedDateTime.now())
+						.build();
+			}
 			
-			ret = PostRelationEntity.builder()
-					.id(relId)
-					.create_at(ZonedDateTime.now())
-					.build();
 			ret = postRelationRepository.save(ret);
 		}catch (Exception e) {
 			// TODO: handle exception
@@ -155,10 +164,10 @@ public class RelationService {
 		return ret;
 	}
 
-	public List<FileRelationEntity> getFileRelationInfo(Long postSid) {
+	public List<FileRelationEntity> getFileRelationInfo(PostEntity postEntity) {
 		List<FileRelationEntity> ret = null;
 		try {
-			ret = fileRelationRepository.findByPostSid(postSid);
+			ret = fileRelationRepository.findByPostSid(postEntity);
 		}catch (Exception e) {
 			// TODO: handle exception
 			log.error("RelationService.getFileRelationInfo : {}",e);
@@ -167,10 +176,10 @@ public class RelationService {
 		return ret;
 	}
 	
-	public MapEntity getMapRelInfo(Long userSid,PostEntity postEntity) {
+	public MapEntity getMapRelInfo(UserEntity userEntity,PostEntity postEntity) {
 		MapEntity ret = null;
 		try {
-			MapRelationEntity relEntity = mapRelationRepository.findByPostANDUser(userSid, postEntity);
+			MapRelationEntity relEntity = mapRelationRepository.findByPostANDUser(userEntity, postEntity);
 			ret = relEntity.getMap();
 		}catch (Exception e) {
 			// TODO: handle exception
@@ -283,4 +292,20 @@ public class RelationService {
 		return ret;
 	}
 	
+	public List<PostEntity> getPostRelInfo(UserEntity userEntity,int page){
+		List<PostEntity> ret = new ArrayList<PostEntity>();
+		try {
+			Pageable pageable = PageRequest.of(page,10,Sort.by("create_at").descending());
+			Page<PostRelationEntity> postPage = postRelationRepository.findByUserPostRel(userEntity, pageable);
+			for(PostRelationEntity row:postPage.getContent()) {
+				ret.add(row.getPost());
+			}
+		}catch (Exception e) {
+			// TODO: handle exception
+			log.error("RelationService.getPostRelInfo : {}",e);
+			ret = null;
+		}
+		return ret;
+	}
+
 }

@@ -18,6 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.wipo.Entity.FileEntity;
 import com.wipo.Entity.FileRelationEntity;
+import com.wipo.Entity.PostEntity;
 import com.wipo.Repository.FileRepository;
 
 import lombok.extern.slf4j.Slf4j;
@@ -134,44 +135,19 @@ public class FileService {
 		return ret;
 	}
 
-	public List<String> getFileInfo(Long postSid){
-		List<String> ret = new ArrayList<String>();
-		List<FileRelationEntity> fileRelArray = null;
+	public List<FileEntity> getFileInfo(PostEntity postEntity){
+		List<FileEntity> ret = new ArrayList<FileEntity>();
 		try {
-			//1. 관계 테이블 조회
-			fileRelArray = relationService.getFileRelationInfo(postSid);
-			if(fileRelArray==null) {
-				throw new Exception("파일조회에러");
+			List<FileRelationEntity> relArray = relationService.getFileRelationInfo(postEntity);
+			if(relArray==null) {
+				throw new Exception("파일정보없음");
 			}
-			
-			//2. file 추출 및 String 변환
-			for(FileRelationEntity row:fileRelArray) {
-				String parseData = getImageToBase64(row.getFile().getFilepath());
-				if(parseData==null) {
-					throw new Exception("파일조회에러");
-				}
-				ret.add(parseData);
+			for(FileRelationEntity row: relArray) {
+				ret.add(row.getFile());
 			}
-			
 		}catch (Exception e) {
 			// TODO: handle exception
 			log.error("FileService.getFileInfo : {}",e);
-			ret = null;
-		}
-		return ret;
-	}
-	
-	public String getImageToBase64(String filepath) {
-		String ret = "";
-		try {
-			Path path = Paths.get(filepath);
-			String mimeType = Files.probeContentType(path);
-			
-			byte[] fileContent = Files.readAllBytes(path);
-            ret = "data:" + mimeType + ";base64," + Base64.getEncoder().encodeToString(fileContent);
-		}catch (IOException e) {
-			// TODO: handle exception
-			log.error("FileService.getImageToBase64 : {}",e);
 			ret = null;
 		}
 		return ret;

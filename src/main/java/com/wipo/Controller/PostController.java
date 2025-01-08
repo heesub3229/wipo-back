@@ -36,7 +36,7 @@ public class PostController {
 	@Autowired
 	private PostService postService;
 	
-	@PostMapping(value="/postSave",consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
+	@PostMapping(value="/postSave",consumes =  MediaType.MULTIPART_FORM_DATA_VALUE )
 	private ResponseEntity<?> postSave(@RequestHeader("Authorization") String jwt ,
 															@RequestPart("data") PostSaveDTO dto,
 															@RequestPart("files")List<MultipartFile> files){

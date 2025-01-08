@@ -1,13 +1,13 @@
 package com.wipo.Entity;
 
 import java.time.ZonedDateTime;
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
-import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.MapsId;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -23,18 +23,20 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class MapRelationEntity {
 	    
-	@EmbeddedId
-	private MapRelationId id;
+	@Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long sid; 
 	
-	@OneToOne
-	@JoinColumn(name = "user_sid", referencedColumnName = "sid", nullable = false, insertable = false, updatable = false)
+	
+	@ManyToOne(optional = false)
+	@JoinColumn(name = "user_sid", referencedColumnName = "sid", nullable = false)
 	private UserEntity user;
 	
-	@OneToOne
-	@JoinColumn(name = "map_sid", referencedColumnName = "sid", nullable = false, insertable = false, updatable = false)
+	@ManyToOne(optional = false)
+	@JoinColumn(name = "map_sid", referencedColumnName = "sid", nullable = false)
 	private MapEntity map;
 	
-	@OneToOne(optional = true)
+	@ManyToOne(optional = true)
 	@JoinColumn(name = "post_sid", referencedColumnName = "sid",nullable = true)
 	private PostEntity post;
 	

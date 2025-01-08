@@ -4,8 +4,10 @@ import java.util.List;
 
 import org.springframework.web.multipart.MultipartFile;
 
+import com.wipo.Entity.FileEntity;
 import com.wipo.Entity.MapEntity;
 import com.wipo.Entity.PostEntity;
+import com.wipo.Entity.UserEntity;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,8 +19,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PostSendDTO {
-	private int page;
+	private String type;
 	private PostEntity post;
 	private MapEntity map;
-	private List<String> imageArray;
+	private List<FileEntity> files;
 }
