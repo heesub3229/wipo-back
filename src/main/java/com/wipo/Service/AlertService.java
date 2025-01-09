@@ -11,6 +11,8 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wipo.DTO.AlertSendDTO;
+import com.wipo.Entity.PostEntity;
+import com.wipo.Entity.PostRelationEntity;
 import com.wipo.Entity.UserEntity;
 import com.wipo.Entity.UserRelationEntity;
 import com.wipo.Repository.UserRepository;
@@ -111,6 +113,7 @@ public class AlertService {
 			UserEntity userEntity = userRepository.findById(userSid).orElse(null);
 			List<UserRelationEntity> userRelArray = relationService.getFriendRelWait(userEntity);
 			List<UserRelationEntity> yesOrNoArray = relationService.getRelApproveYesOrNo(userEntity);
+			List<PostRelationEntity> postArray = relationService.getPostRelToAlert(userEntity);
 			//친구요청알림
 			for(UserRelationEntity row : userRelArray) {
 				AlertSendDTO dto = AlertSendDTO.builder()
@@ -124,6 +127,7 @@ public class AlertService {
 												.build();
 				ret.add(dto);
 			}
+			//친구 요청 수락, 거절알림
 			String str = "";
 			for(UserRelationEntity row:yesOrNoArray) {
 				if(row.getApprove_flag().equals("Y")) {
@@ -143,7 +147,18 @@ public class AlertService {
 				ret.add(dto);
 				
 			}
-			
+			//포스팅 알림
+			for(PostRelationEntity row: postArray) {
+				AlertSendDTO dto = AlertSendDTO.builder()
+												.confirm_flag(row.getConfirm_flag())
+												.content(row.getPost().getCreate_user_sid().getName()+"님이 게시물을 포스팅했습니다.")
+												.date(row.getCreate_at().format(formatter))
+												.sid(row.getPost().getSid())
+												.title(row.getPost().getCreate_user_sid().getEmail())
+												.type("P")
+												.build();
+				ret.add(dto);
+			}
 		}catch (Exception e) {
 			log.error("AlertService.getAlertArray : {}",e);
 			// TODO: handle exception

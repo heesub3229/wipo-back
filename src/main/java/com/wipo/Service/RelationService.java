@@ -102,16 +102,24 @@ public class RelationService {
 	}
 	
 	
-	public PostRelationEntity setPostRelationSave(UserEntity userEntity,PostEntity postEntity) {
+	public PostRelationEntity setPostRelationSave(UserEntity userEntity,PostEntity postEntity,String confirmFlag) {
 		PostRelationEntity ret = null;
 		try {
 			ret = postRelationRepository.findByUserAndPost(userEntity, postEntity);
 			if(ret ==null) {
-				ret = PostRelationEntity.builder()
-						.post(postEntity)
-						.user(userEntity)
-						.create_at(ZonedDateTime.now())
-						.build();
+				if(confirmFlag.equals("Y")) {
+					ret = null;
+				}else {
+					ret = PostRelationEntity.builder()
+							.post(postEntity)
+							.user(userEntity)
+							.confirm_flag(confirmFlag)
+							.create_at(ZonedDateTime.now())
+							.build();
+				}
+				
+			}else {
+				ret.setConfirm_flag(confirmFlag);
 			}
 			
 			ret = postRelationRepository.save(ret);
@@ -304,6 +312,19 @@ public class RelationService {
 			// TODO: handle exception
 			log.error("RelationService.getPostRelInfo : {}",e);
 			ret = null;
+		}
+		return ret;
+	}
+	
+	public List<PostRelationEntity> getPostRelToAlert(UserEntity userEntity){
+		List<PostRelationEntity> ret = null;
+		try {
+			ZonedDateTime oneWeekAgo = ZonedDateTime.now().minusWeeks(1);
+			ret = postRelationRepository.findByUserPostToDate(userEntity, oneWeekAgo);
+		}catch (Exception e) {
+			log.error("RelationService.getPostRelToAlert : {}",e);
+			ret = null;
+			// TODO: handle exception
 		}
 		return ret;
 	}

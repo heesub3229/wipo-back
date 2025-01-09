@@ -94,4 +94,58 @@ public class PostController {
 		}
 	}
 
+	@GetMapping("/getOtherPost")
+	private ResponseEntity<?> getOtherPost(@RequestHeader("Authorization") String jwt ,@RequestParam("page") int page){
+		try {
+			if(!jwtTokenProvider.validateJwt(jwt)) {
+				Claims claims = jwtTokenProvider.validateToken(jwt);
+				String json = claims.get("user",String.class);
+				
+				JwtDTO jwtDto = UtilService.parseJsonToDto(json, JwtDTO.class);
+				ResponseDTO<?> ret = postService.getOtherPost(page, jwtDto.getSid());
+				
+				if(ret.isErrFlag()) {
+					return new ResponseEntity<>(ret,HttpStatus.BAD_REQUEST);
+				}else {
+					return new ResponseEntity<>(ret,HttpStatus.OK);
+				}
+			}else {
+				return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("토큰에러");
+			}
+			
+		}catch (Exception e) {
+			// TODO: handle exception
+			log.error("PostController.getOtherPost : {} ",e);
+			
+			return ResponseEntity.badRequest().body("로그인서버에러");
+		}
+	}
+	
+	@GetMapping("/getPostInfo")
+	private ResponseEntity<?> getPostInfo(@RequestHeader("Authorization") String jwt ,@RequestParam("postSid") Long postSid){
+		try {
+			if(!jwtTokenProvider.validateJwt(jwt)) {
+				Claims claims = jwtTokenProvider.validateToken(jwt);
+				String json = claims.get("user",String.class);
+				
+				JwtDTO jwtDto = UtilService.parseJsonToDto(json, JwtDTO.class);
+				ResponseDTO<?> ret = postService.getPostInfo(jwtDto.getSid() ,postSid);
+				
+				if(ret.isErrFlag()) {
+					return new ResponseEntity<>(ret,HttpStatus.BAD_REQUEST);
+				}else {
+					return new ResponseEntity<>(ret,HttpStatus.OK);
+				}
+			}else {
+				return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("토큰에러");
+			}
+			
+		}catch (Exception e) {
+			// TODO: handle exception
+			log.error("PostController.getPostInfo : {} ",e);
+			
+			return ResponseEntity.badRequest().body("로그인서버에러");
+		}
+	}
+	
 }

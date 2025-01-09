@@ -1,5 +1,8 @@
 package com.wipo.Repository;
 
+import java.time.ZonedDateTime;
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -19,4 +22,8 @@ public interface PostRelationRepository extends JpaRepository<PostRelationEntity
 	
 	@Query("SELECT p FROM PostRelationEntity p WHERE p.user = :user")
 	Page<PostRelationEntity> findByUserPostRel(@Param("user")UserEntity userEntity,Pageable pageable);
+	
+	@Query("SELECT p FROM PostRelationEntity p WHERE p.user = :user AND p.create_at BETWEEN :date AND CURRENT_TIMESTAMP")
+	List<PostRelationEntity> findByUserPostToDate(@Param("user")UserEntity userEntity,@Param("date")ZonedDateTime date);
+	
 }

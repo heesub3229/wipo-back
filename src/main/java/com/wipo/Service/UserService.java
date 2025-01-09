@@ -262,6 +262,12 @@ public class UserService {
 		
 		try {
 
+			UserEntity userEntity = userRepository.findByEmail(email);
+			if(userEntity!=null) {
+				throw new Exception("이미 가입한 유저입니다.");
+			}
+			
+			
 			EmailAuthCodeDTO ret = UtilService.generateAndSaveCode(email);
 			
 			String emailBody = """
@@ -345,6 +351,7 @@ public class UserService {
 													.logintype("W")
 													.name(dto.getName())
 													.password(dto.getPassword())
+													.friendsLength(0)
 													.build();
 			userRepository.save(userEntities);
 			

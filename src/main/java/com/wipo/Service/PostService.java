@@ -124,7 +124,7 @@ public class PostService {
 			}
 			//포스트 - 친구 관계저장
 			for(UserEntity row : userArray) {
-				PostRelationEntity tempPostEntity = relationService.setPostRelationSave(row, postEntity);
+				PostRelationEntity tempPostEntity = relationService.setPostRelationSave(row, postEntity,"N");
 				if(tempPostEntity == null) {
 					throw new Exception("태그에러");
 				}
@@ -202,20 +202,7 @@ public class PostService {
 				}
 			}
 				
-			//포스팅한 게시물
-			List<PostEntity> postingEntity = relationService.getPostRelInfo(userEntity, page);
-			for(PostEntity row:postingEntity) {
-				MapEntity mapEntity = relationService.getMapRelInfo(userEntity, row);
-				List<FileEntity> files = fileService.getFileInfo(row);
-				PostSendDTO dto = PostSendDTO.builder()
-												.type("F")
-												.post(row)
-												.map(mapEntity)
-												.files(files)
-												.build();
-				ret.add(dto);
-												
-			}
+			
 			res = ResponseDTO.<List<PostSendDTO>>builder()
 					.errFlag(false)
 					.resDate(ZonedDateTime.now())
@@ -234,6 +221,94 @@ public class PostService {
 		return res;
 	}
 
+	public ResponseDTO<?> getOtherPost(int page, Long userSid){
+		List<PostEntity> postPage = null;
+		UserEntity userEntity = null;
+		List<PostSendDTO> ret = new ArrayList<PostSendDTO>();
+		ResponseDTO<?> res = null;
+		try {
+			userEntity = userRepository.findById(userSid).orElse(null);
+			
+			postPage = relationService.getPostRelInfo(userEntity, page);
+			
+			for(PostEntity row:postPage) {
+				MapEntity mapEntity = relationService.getMapRelInfo(row.getCreate_user_sid(), row);
+				List<FileEntity> files = fileService.getFileInfo(row);
+				
+				PostSendDTO dto = PostSendDTO.builder()
+						.type("F")
+						.post(row)
+						.map(mapEntity)
+						.files(files)
+						.build();
+				ret.add(dto);
+			}
+			
+			res = ResponseDTO.<List<PostSendDTO>>builder()
+					.errFlag(false)
+					.resDate(ZonedDateTime.now())
+					.data(ret)
+					.build();
+			
+		}catch (Exception e) {
+			// TODO: handle exception
+			log.error("PostService.getOtherPost : {}",e);
+			res = ResponseDTO.<String>builder()
+					.errFlag(true)
+					.resDate(ZonedDateTime.now())
+					.data(e.getMessage())
+					.build();
+		}
+		return res;
+	}
+	
+	public ResponseDTO<?> getPostInfo(Long userSid,Long postSid){
+		ResponseDTO<?> res = null;
+		try {
+			UserEntity userEntity = userRepository.findById(userSid).orElse(null);
+			if(userEntity==null) {
+				throw new Exception("유저에러");
+			}
+			
+			PostEntity postEntity = postRepository.findById(postSid).orElse(null);
+			if(postEntity==null) {
+				throw new Exception("위치저장에러");
+			}
+			
+			List<FileEntity> files = fileService.getFileInfo(postEntity);
+			if(files==null) {
+				throw new Exception("파일조회에러");
+			}
+			MapEntity mapEntity = relationService.getMapRelInfo(postEntity.getCreate_user_sid(), postEntity);
+			if(mapEntity==null) {
+				throw new Exception("위치조회에러");
+			}
+			
+			PostRelationEntity tempPostEntity = relationService.setPostRelationSave(userEntity, postEntity,"Y");
+			if(tempPostEntity == null) {
+				throw new Exception("포스팅에러");
+			}
+			PostSendDTO dto = PostSendDTO.builder()
+											.post(postEntity)
+											.map(mapEntity)
+											.files(files)
+											.build();
+			res = ResponseDTO.<PostSendDTO>builder()
+										.errFlag(false)
+										.resDate(ZonedDateTime.now())
+										.data(dto)
+										.build();
+		}catch (Exception e) {
+			// TODO: handle exception
+			log.error("PostService.getPostInfo : {}",e);
+			res = ResponseDTO.<String>builder()
+					.errFlag(true)
+					.resDate(ZonedDateTime.now())
+					.data(e.getMessage())
+					.build();
+		}
+		return res;
+	}
 	
 	
 }

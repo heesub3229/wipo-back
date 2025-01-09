@@ -37,6 +37,9 @@ public class PostRelationEntity {
 	@JoinColumn(name = "post_sid", referencedColumnName = "sid", nullable = false)
 	private PostEntity post;
 	
+	@Column(name="confirm_flag",length = 1)
+	private String confirm_flag;
+	
 	@Column(name="create_at", nullable = false)
 	private ZonedDateTime create_at;
 	
