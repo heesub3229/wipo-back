@@ -28,6 +28,7 @@ import com.wipo.DTO.ResponseDTO;
 import com.wipo.DTO.SendUserInfoDTO;
 import com.wipo.DTO.UserSignDTO;
 import com.wipo.Entity.FileEntity;
+import com.wipo.Entity.MapEntity;
 import com.wipo.Entity.UserEntity;
 import com.wipo.Entity.UserRelationEntity;
 import com.wipo.Repository.UserRepository;
@@ -61,6 +62,7 @@ public class UserService {
 	public ResponseDTO<String> kakaoLogin(String code){
 		
 		try {
+			
 			Mono<String> tokenRes = apiService.tokenApi(code);
 			
 			if(tokenRes==null) {
@@ -68,7 +70,6 @@ public class UserService {
 			}
 			
 			KakaoTokenDTO tokenDto = UtilService.parseJsonToDto(tokenRes.block(), KakaoTokenDTO.class);
-			
 			if(tokenDto==null) {
 				throw new Exception("카카오로그인 에러");
 			}
@@ -139,6 +140,7 @@ public class UserService {
 								String access_token,
 								String name) {
 		try {
+			log.info(email+":"+login_type+":"+"로그인");
 			UserEntity userEntities = userRepository.findByEmail(email);
 			
 			if(userEntities != null) {
@@ -375,6 +377,7 @@ public class UserService {
 	
 	public ResponseDTO<?> login(Map<String, String> dto){
 		try {
+			log.info(dto.get("email")+"로그인");
 			String email = dto.get("email");
 			if(email == null) {
 				throw new Exception("이메일 에러");
@@ -431,6 +434,7 @@ public class UserService {
 	
 	public ResponseDTO<?> userInfo(String userJson){
 		try {
+			
 			JwtDTO jwtDto = UtilService.parseJsonToDto(userJson, JwtDTO.class);
 			if(jwtDto==null) {
 				throw new Exception("토큰에러");
@@ -439,7 +443,7 @@ public class UserService {
 			if(userEntity==null) {
 				throw new Exception("유저에러");
 			}
-			
+			log.info(userEntity.getSid()+"유저정보조회");
 			userEntity.setPassword(null);
 			
 		    List<UserRelationEntity> friendRelArray = relationService.getUserRelInfo(userEntity);
@@ -457,10 +461,13 @@ public class UserService {
 		    	tempEntity.setPassword(null);
 		    	friendUserArray.add(tempEntity);
 		    }
+		    //즐겨찾기 맵
+		    List<MapEntity> favList = relationService.getMapRelFav(userEntity);
 		    
 		    SendUserInfoDTO dto = SendUserInfoDTO.builder()
 		    									.user(userEntity)
 		    									.friend(friendUserArray)
+		    									.favList(favList)
 		    									.build();
 		    
 			return ResponseDTO.<SendUserInfoDTO>builder()

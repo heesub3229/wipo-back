@@ -12,6 +12,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.wipo.DTO.FavSaveDTO;
 import com.wipo.Entity.FileEntity;
 import com.wipo.Entity.FileRelationEntity;
 import com.wipo.Entity.MapEntity;
@@ -321,6 +322,65 @@ public class RelationService {
 		try {
 			ZonedDateTime oneWeekAgo = ZonedDateTime.now().minusWeeks(1);
 			ret = postRelationRepository.findByUserPostToDate(userEntity, oneWeekAgo);
+		}catch (Exception e) {
+			log.error("RelationService.getPostRelToAlert : {}",e);
+			ret = null;
+			// TODO: handle exception
+		}
+		return ret;
+	}
+	
+	public MapRelationEntity setMapRelFav(UserEntity userEntity,MapEntity mapEntity,String favFlag){
+		MapRelationEntity ret = null;
+		try {
+			ret = mapRelationRepository.findByUserAndMapFav(userEntity,mapEntity);
+			if(ret == null) {
+				if(favFlag.equals("Y")) {
+					ret = MapRelationEntity.builder()
+							.create_at(ZonedDateTime.now())
+							.map(mapEntity)
+							.post(null)
+							.user(userEntity)
+							.build();
+					ret = mapRelationRepository.save(ret);
+				}else {
+					ret = MapRelationEntity.builder()
+							.sid(null)
+							.build();
+				}
+			}else {
+				if(favFlag.equals("N")) {
+					mapRelationRepository.delete(ret);
+					ret.setSid(null);
+				}else {
+					ret = MapRelationEntity.builder()
+							.sid(null)
+							.build();
+				}
+			}
+			
+			
+			
+		}catch (Exception e) {
+			log.error("RelationService.getPostRelToAlert : {}",e);
+			ret = null;
+			// TODO: handle exception
+		}
+		return ret;
+	}
+
+	public List<MapEntity> getMapRelFav(UserEntity userEntity){
+		List<MapEntity> ret = new ArrayList<MapEntity>();
+		try {
+			List<MapRelationEntity> relArray = mapRelationRepository.findByMapFav(userEntity);
+			if(relArray==null) {
+				throw new Exception("즐겨찾기 없음");
+			}
+			for(MapRelationEntity row: relArray) {
+				ret.add(row.getMap());
+			}
+			
+			
 		}catch (Exception e) {
 			log.error("RelationService.getPostRelToAlert : {}",e);
 			ret = null;

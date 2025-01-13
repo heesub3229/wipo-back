@@ -19,4 +19,5 @@ public class SendUserInfoDTO {
 	private UserEntity user;
 	private List<UserEntity> friend;
 	private List<AlertSendDTO> alert;
+	private List<MapEntity> favList;
 }

@@ -34,6 +34,7 @@ public class AlertService {
 	public SseEmitter setClients(Long userSid) {
 		SseEmitter ret = null;
 		try {
+			log.info(userSid.toString()+"자동로그인");
 			ret = new SseEmitter(0L);
 			clients.put(userSid, ret);
 			ret.onTimeout(() -> clients.remove(userSid));
@@ -59,6 +60,7 @@ public class AlertService {
 	
 	public void disconStream(Long userSid) {
 		try {
+			log.info(userSid.toString()+"로그인종료");
 			clients.remove(userSid);
 		}catch (Exception e) {
 			// TODO: handle exception

@@ -40,6 +40,9 @@ public class MapEntity {
     private String region_2depth_name;
     @Column( length = 50)
     private String region_3depth_name;
+    @Column( length = 1,nullable = false)
+    private String type;
+    
     
     @Column(name="create_at", nullable = false)
     private ZonedDateTime create_at;
