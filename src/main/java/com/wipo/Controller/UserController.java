@@ -415,14 +415,15 @@ public class UserController {
 	public ResponseEntity<?> setProfile(@RequestHeader("Authorization") String jwt,
 															@RequestPart(value="dateBirth",required = false)String dateBirth,
 															@RequestPart(value="color",required = false)String color,
-															@RequestPart(value="image",required = false)MultipartFile image){
+															@RequestPart(value="image",required = false)MultipartFile image,
+															@RequestPart(value="defaultDay",required = false)String defaultDay){
 		try {
 			if(!jwtTokenProvider.validateJwt(jwt)) {
 				Claims claims = jwtTokenProvider.validateToken(jwt);
 				String json = claims.get("user",String.class);
 				
 				JwtDTO jwtDto = UtilService.parseJsonToDto(json, JwtDTO.class);
-				ResponseDTO<?> ret = userService.setProfile(jwtDto.getSid(), dateBirth, color, image);
+				ResponseDTO<?> ret = userService.setProfile(jwtDto.getSid(), dateBirth, color, image,defaultDay);
 				if(ret.isErrFlag()) {
 					return new ResponseEntity<>(ret,HttpStatus.BAD_REQUEST);
 				}else {

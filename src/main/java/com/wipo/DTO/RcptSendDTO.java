@@ -1,11 +1,11 @@
 package com.wipo.DTO;
 
 import java.util.List;
-import java.util.Map;
 
+import com.wipo.Entity.FileEntity;
 import com.wipo.Entity.MapEntity;
 import com.wipo.Entity.PostEntity;
-import com.wipo.Entity.UserEntity;
+import com.wipo.Entity.RcptEntity;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,9 +16,8 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class SendUserInfoDTO {
-	private UserEntity user;
-	private List<UserEntity> friend;
-	private List<AlertSendDTO> alert;
-	private List<MapEntity> favList;
+public class RcptSendDTO {
+	private Long totalIAmount;
+	private Long totalEAmount;
+	private List<RcptEntity> rcptArray;
 }

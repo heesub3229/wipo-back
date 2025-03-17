@@ -1,5 +1,6 @@
 package com.wipo.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -158,6 +159,70 @@ public class UtilService {
 			// TODO: handle exception
 			log.error("UtilService.getFileExtenstion : {}",e);
 			ret = "";
+		}
+		return ret;
+	}
+	
+	public static String convDateToStringDay(int diff,Integer defaultDay,LocalDate localDate) {
+		String ret = "";
+		try {
+			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
+			if(diff==0) {
+				if(defaultDay == 0) {
+					ret = localDate.format(formatter);
+				}else {
+					LocalDate tempDt = localDate.withDayOfMonth(defaultDay);
+					ret = tempDt.format(formatter);
+				}
+				
+			}else {
+				if(defaultDay == 0) {
+					ret = localDate.minusMonths(diff).format(formatter);
+				}else {
+					LocalDate tempDt = localDate.minusMonths(diff).withDayOfMonth(defaultDay);
+					ret = tempDt.format(formatter);
+				}
+				
+			}
+		}catch (Exception e) {
+			// TODO: handle exception
+			log.error("UtilService.convDateToStringDay : {}",e);
+			ret = "";
+		}
+		return ret;
+	}
+	
+	public static String convDateToStringMonth(Integer defaultDay,LocalDate localDate) {
+		String ret = "";
+		try {
+			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMM");
+			if(defaultDay==0) {
+				ret = localDate.format(formatter);
+				
+				
+			}else {
+				
+				LocalDate tempDt = localDate.withDayOfMonth(defaultDay);
+				ret = tempDt.format(formatter);
+				
+			}
+		}catch (Exception e) {
+			// TODO: handle exception
+			log.error("UtilService.convDateToStringMonth : {}",e);
+			ret = "";
+		}
+		return ret;
+	}
+	
+	public static LocalDate convStringToDate(String date) {
+		LocalDate ret = null;
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
+		try {
+			ret = LocalDate.parse(date,formatter);
+		}catch (Exception e) {
+			// TODO: handle exception
+			log.error("UtilService.convStringToDate : {}",e);
+			ret = null;
 		}
 		return ret;
 	}

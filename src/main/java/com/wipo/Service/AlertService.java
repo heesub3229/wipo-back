@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wipo.DTO.AlertSendDTO;
 import com.wipo.Entity.PostEntity;
 import com.wipo.Entity.PostRelationEntity;
+import com.wipo.Entity.RestRelationEntity;
 import com.wipo.Entity.UserEntity;
 import com.wipo.Entity.UserRelationEntity;
 import com.wipo.Repository.UserRepository;
@@ -116,6 +117,7 @@ public class AlertService {
 			List<UserRelationEntity> userRelArray = relationService.getFriendRelWait(userEntity);
 			List<UserRelationEntity> yesOrNoArray = relationService.getRelApproveYesOrNo(userEntity);
 			List<PostRelationEntity> postArray = relationService.getPostRelToAlert(userEntity);
+			List<RestRelationEntity> restArray = relationService.getRestRelInfo(userEntity);
 			//친구요청알림
 			for(UserRelationEntity row : userRelArray) {
 				AlertSendDTO dto = AlertSendDTO.builder()
@@ -160,6 +162,21 @@ public class AlertService {
 												.type("P")
 												.build();
 				ret.add(dto);
+			}
+			
+			//맛집추천알림
+			if(restArray!=null&&restArray.size()>0) {
+				for(RestRelationEntity row:restArray) {
+					AlertSendDTO dto = AlertSendDTO.builder()
+												.content(row.getUser().getName()+"님이 맛집을 추천했습니다.")
+												.title(row.getUser().getEmail())
+												.sid(row.getSid())
+												.confirm_flag(row.getConfirm_flag())
+												.date(row.getCreate_at().format(formatter))
+												.type("R")
+												.build();
+					ret.add(dto);
+				}
 			}
 		}catch (Exception e) {
 			log.error("AlertService.getAlertArray : {}",e);

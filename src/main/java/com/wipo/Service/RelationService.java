@@ -19,10 +19,13 @@ import com.wipo.Entity.MapEntity;
 import com.wipo.Entity.MapRelationEntity;
 import com.wipo.Entity.PostEntity;
 import com.wipo.Entity.PostRelationEntity;
+import com.wipo.Entity.RestEntity;
+import com.wipo.Entity.RestRelationEntity;
 import com.wipo.Entity.UserEntity;
 import com.wipo.Entity.UserRelationEntity;
 import com.wipo.Repository.MapRelationRepository;
 import com.wipo.Repository.PostRelationRepository;
+import com.wipo.Repository.RestRelationRepository;
 import com.wipo.Repository.UserRelationRepository;
 import com.wipo.Repository.UserRepository;
 import com.wipo.Repository.fileRelationRepository;
@@ -47,6 +50,9 @@ public class RelationService {
 	
 	@Autowired
 	private PostRelationRepository postRelationRepository;
+	
+	@Autowired
+	private RestRelationRepository restRelationRepository;
 		
 	public FileRelationEntity setFileRelationSave(FileEntity fileEntity,PostEntity postEntity){
 		FileRelationEntity ret = null;
@@ -318,10 +324,12 @@ public class RelationService {
 	}
 	
 	public List<PostRelationEntity> getPostRelToAlert(UserEntity userEntity){
-		List<PostRelationEntity> ret = null;
+		List<PostRelationEntity> ret = new ArrayList<PostRelationEntity>();
 		try {
 			ZonedDateTime oneWeekAgo = ZonedDateTime.now().minusWeeks(1);
 			ret = postRelationRepository.findByUserPostToDate(userEntity, oneWeekAgo);
+			List<PostRelationEntity> ret2 = postRelationRepository.findByUserPost(userEntity);
+			ret.addAll(ret2);
 		}catch (Exception e) {
 			log.error("RelationService.getPostRelToAlert : {}",e);
 			ret = null;
@@ -383,6 +391,65 @@ public class RelationService {
 			
 		}catch (Exception e) {
 			log.error("RelationService.getPostRelToAlert : {}",e);
+			ret = null;
+			// TODO: handle exception
+		}
+		return ret;
+	}
+
+	public RestRelationEntity setRestRelSave(RestEntity restEntity,UserEntity userEntity,String flag){
+		RestRelationEntity ret = null;
+		try {
+			ret = restRelationRepository.findByUserAndRest(userEntity, restEntity).orElse(null);
+			if(ret==null) {
+				ret = RestRelationEntity.builder()
+								.confirm_flag(flag)
+								.create_at(ZonedDateTime.now())
+								.rest(restEntity)
+								.user(userEntity)
+								.build();
+				ret = restRelationRepository.save(ret);
+			}else {
+				ret.setConfirm_flag(flag);
+				ret = restRelationRepository.save(ret);
+			}
+			
+			
+		}catch (Exception e) {
+			log.error("RelationService.setRestRelSave : {}",e);
+			ret = null;
+			// TODO: handle exception
+		}
+		return ret;
+	}
+	
+	public List<RestRelationEntity> getRestRelInfo(UserEntity userEntity){
+		List<RestRelationEntity> ret = new ArrayList<RestRelationEntity>();
+		try {
+			ZonedDateTime oneWeekAgo = ZonedDateTime.now().minusWeeks(1);
+			ret = restRelationRepository.findByUserList(userEntity);
+			List<RestRelationEntity> ret2 = restRelationRepository.findByUserListToDate(userEntity, oneWeekAgo);
+			ret.addAll(ret2);
+						
+		}catch (Exception e) {
+			log.error("RelationService.getRestRelInfo : {}",e);
+			ret = null;
+			// TODO: handle exception
+		}
+		return ret;
+	}
+	
+	public RestRelationEntity setRestRelApprove(Long restRelSid){
+		RestRelationEntity ret = null;
+		try {
+			ret = restRelationRepository.findById(restRelSid).orElse(null);
+			if(ret==null) {
+				throw new Exception(restRelSid.toString());
+			}
+			ret.setConfirm_flag("Y");
+			ret = restRelationRepository.save(ret);
+		}catch (Exception e) {
+			log.error("RelationService.setRestRelApprove : {}",e);
 			ret = null;
 			// TODO: handle exception
 		}

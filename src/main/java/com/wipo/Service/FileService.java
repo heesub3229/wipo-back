@@ -94,6 +94,18 @@ public class FileService {
 		}
 	}
 	
+	public void setFileDeleteOne(FileEntity files) {
+		Path path=null;
+		try {
+				path = Paths.get(files.getFilepath());
+				Files.deleteIfExists(path);
+				path = null;
+		}catch (IOException e) {
+			// TODO: handle exception
+			log.error("FileService.setFileDelete : {}",e);
+		}
+	}
+	
 	private FileEntity setFileSave(MultipartFile file) {
 		FileEntity ret = null;
 		try {

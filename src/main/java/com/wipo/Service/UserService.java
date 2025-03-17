@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -54,8 +55,11 @@ public class UserService {
 	
 	private final FileService fileService;
 	
-	public UserService(FileService fileService) {
+	private final RcptService rcptService;
+	
+	public UserService(FileService fileService,RcptService rcptService) {
 		this.fileService = fileService;
+		this.rcptService  = rcptService;
 	}
 	
 	
@@ -464,6 +468,8 @@ public class UserService {
 		    //즐겨찾기 맵
 		    List<MapEntity> favList = relationService.getMapRelFav(userEntity);
 		    
+		   
+		    
 		    SendUserInfoDTO dto = SendUserInfoDTO.builder()
 		    									.user(userEntity)
 		    									.friend(friendUserArray)
@@ -783,7 +789,7 @@ public class UserService {
 		}
 	}
 	
-	public ResponseDTO<?> setProfile(Long userSid,String dateBirth,String color,MultipartFile file){
+	public ResponseDTO<?> setProfile(Long userSid,String dateBirth,String color,MultipartFile file,String defaultDay){
 		try {
 			FileEntity fileEntity  = null;
 			if(file!=null) {
@@ -799,7 +805,11 @@ public class UserService {
 			}
 			userEntity.setDateBirth(dateBirth);
 			userEntity.setProfileColor(color);
-			userEntity.setFile(fileEntity);
+			if(fileEntity != null) {
+				userEntity.setFile(fileEntity);
+			}
+			
+			userEntity.setDefaultDay(Integer.parseInt(defaultDay));
 			userEntity = userRepository.save(userEntity);
 			userEntity.setPassword(null);
 			

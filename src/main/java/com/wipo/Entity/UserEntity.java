@@ -59,6 +59,9 @@ public class UserEntity {
 	    @Column(name = "profileColor",length = 10)
 	    private String profileColor;
 	    
+	    @Column(name = "defaultDay",nullable = true)
+	    private Integer defaultDay;
+	    
 	    @OneToOne(optional = true)
 	    @JoinColumn(name = "file_sid", referencedColumnName = "sid",nullable = true)
 	    private FileEntity file;

@@ -23,7 +23,10 @@ public interface PostRelationRepository extends JpaRepository<PostRelationEntity
 	@Query("SELECT p FROM PostRelationEntity p WHERE p.user = :user")
 	Page<PostRelationEntity> findByUserPostRel(@Param("user")UserEntity userEntity,Pageable pageable);
 	
-	@Query("SELECT p FROM PostRelationEntity p WHERE p.user = :user AND p.create_at BETWEEN :date AND CURRENT_TIMESTAMP")
+	@Query("SELECT p FROM PostRelationEntity p WHERE p.user = :user AND p.confirm_flag = 'Y' AND p.create_at BETWEEN :date AND CURRENT_TIMESTAMP")
 	List<PostRelationEntity> findByUserPostToDate(@Param("user")UserEntity userEntity,@Param("date")ZonedDateTime date);
+	
+	@Query("SELECT p FROM PostRelationEntity p WHERE p.user = :user AND p.confirm_flag = 'N'")
+	List<PostRelationEntity> findByUserPost(@Param("user")UserEntity userEntity);
 	
 }

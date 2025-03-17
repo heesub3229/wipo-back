@@ -40,6 +40,8 @@ dependencies {
 	implementation 'io.jsonwebtoken:jjwt-jackson:0.11.5'
 	implementation 'com.google.auth:google-auth-library-oauth2-http:1.18.0'
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
+	implementation 'net.sourceforge.tess4j:tess4j:5.11.0'
+	implementation("org.bytedeco:javacv-platform:1.5.11")
 }
 
 tasks.named('test') {
