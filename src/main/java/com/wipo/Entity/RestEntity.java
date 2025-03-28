@@ -8,6 +8,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -42,14 +43,14 @@ public class RestEntity {
     @JoinColumn(name = "file_sid", referencedColumnName = "sid",nullable = true)
     private FileEntity file;
 	
-	@OneToOne(optional = true)
+	@ManyToOne(optional = true)
     @JoinColumn(name = "map_sid", referencedColumnName = "sid")
     private MapEntity map;
 	
 	@Column(name="create_at", nullable = false)
     private ZonedDateTime create_at;
 	
-	@OneToOne(optional = false)
+	@ManyToOne(optional = false)
     @JoinColumn(name="create_user_sid",referencedColumnName = "sid")
     private UserEntity create_user_sid;
 	
