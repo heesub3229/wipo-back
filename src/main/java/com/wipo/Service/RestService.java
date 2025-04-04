@@ -15,6 +15,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wipo.DTO.AlertSendDTO;
 import com.wipo.DTO.ResponseDTO;
 import com.wipo.DTO.RestSaveDTO;
+import com.wipo.DTO.RestSendDTO;
 import com.wipo.Entity.FileEntity;
 import com.wipo.Entity.MapEntity;
 import com.wipo.Entity.RestEntity;
@@ -90,39 +91,7 @@ public class RestService {
 				
 				rest = restRepository.save(rest);
 			}
-			if(dto.getFriend() != null&&dto.getFriend().size()>0) {
-				
-				for(Long row:dto.getFriend()) {
-					UserEntity friendEntity = userRepository.findById(row).orElse(null);
-					if(friendEntity==null) {
-						throw new Exception("태그정보 에러");
-					}
-					RestRelationEntity relEntity = relService.setRestRelSave(rest,friendEntity,"N");
-					if(relEntity==null) {
-						throw new Exception("태그정보 에러");
-					}
-					SseEmitter client = AlertService.validClient(friendEntity.getSid());
-					if(client != null) {
-						DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy. MM. dd");
-						AlertSendDTO alertDto = AlertSendDTO.builder()
-															.content(userEntity.getName()+"님이 맛집을 추천했습니다.")
-															.title(userEntity.getEmail())
-															.sid(relEntity.getSid())
-															.confirm_flag(relEntity.getConfirm_flag())
-															.date(relEntity.getCreate_at().format(formatter))
-															.type("R")
-															.build();
-						ObjectMapper mapper = new ObjectMapper();
-						String json = mapper.writeValueAsString(alertDto);
-															
-						client.send(SseEmitter.event().name("alert").data(json));
-					}
-					
-				}
-				
-				
-				
-			}
+			
 			ret = ResponseDTO.<RestEntity>builder()
 					.errFlag(false)
 					.data(rest)
@@ -181,6 +150,49 @@ public class RestService {
 		return ret;
 	}
 
-
+	public ResponseDTO<?> getRestList(Long userSid){
+		ResponseDTO<?> ret = null;
+		try {
+			
+			UserEntity userEntity = userRepository.findById(userSid).orElse(null);
+			if(userEntity == null) {
+				throw new Exception("유저정보 조회에러");
+			}
+			
+			List<RestEntity> restArray = restRepository.getRestUserToList(userEntity);
+			
+			List<RestSendDTO> retArray = new ArrayList<RestSendDTO>();
+			
+			for(RestEntity row: restArray) {
+				RestSendDTO tempDto = new RestSendDTO();
+				int count = relService.findByMapAndUserCount(userEntity, row.getMap());
+				tempDto.setCreate_at(row.getCreate_at());
+				tempDto.setCreate_user_sid(row.getCreate_user_sid());
+				tempDto.setFile(row.getFile());
+				tempDto.setMap(row.getMap());
+				tempDto.setMemo(row.getMemo());
+				tempDto.setMenuName(row.getMenuName());
+				tempDto.setPlaceName(row.getPlaceName());
+				tempDto.setPostCount(count);
+				tempDto.setRating(row.getRating());
+				tempDto.setSid(row.getSid());
+				retArray.add(tempDto);
+			}
+			
+			ret = ResponseDTO.builder()
+					.errFlag(false)
+					.data(retArray)
+					.build();
+		}catch (Exception e) {
+			// TODO: handle exception
+			log.error("RestService.getRestList : {}",e);
+			ret = ResponseDTO.<String>builder()
+					.errFlag(true)
+					.resDate(ZonedDateTime.now())
+					.data(e.getMessage())
+					.build();
+		}
+		return ret;
+	}
 
 }

@@ -1,5 +1,6 @@
 package com.wipo.Entity;
 
+import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 
 import jakarta.persistence.Column;
@@ -38,6 +39,9 @@ public class RestEntity {
 	
 	@Column( length = 200)
     private String memo;
+	
+	@Column(precision = 2, scale = 1)
+	private BigDecimal rating;
 	
 	@OneToOne(optional = true)
     @JoinColumn(name = "file_sid", referencedColumnName = "sid",nullable = true)

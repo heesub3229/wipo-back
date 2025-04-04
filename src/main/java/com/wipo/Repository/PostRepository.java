@@ -17,5 +17,5 @@ public interface PostRepository extends JpaRepository<PostEntity, Long>{
 
 	@Query("SELECT p FROM PostEntity p WHERE p.create_user_sid = :userSid")
 	Page<PostEntity> findByCreateUserSid(@Param("userSid")UserEntity userSid,Pageable pageable);
-	
+		
 }

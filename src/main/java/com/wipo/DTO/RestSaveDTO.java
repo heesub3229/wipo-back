@@ -17,7 +17,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class RestSaveDTO {
 	private RestEntity restaurant;
-	private List<Long> friend;
 	private MultipartFile image;
 	private MapEntity map;
 }

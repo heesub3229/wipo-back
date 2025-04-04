@@ -24,4 +24,7 @@ public interface MapRelationRepository extends JpaRepository<MapRelationEntity, 
 	@Query("SELECT m FROM MapRelationEntity m WHERE m.user = :user AND m.post IS NULL AND m.map = :map")
 	MapRelationEntity findByUserAndMapFav(@Param("user")UserEntity userEntity,@Param("map")MapEntity mapEntity);
 	
+	@Query("SELECT COUNT(m) FROM MapRelationEntity m WHERE m.user = :user AND m.map = :map AND m.post IS NOT NULL")
+	int findByMapAndUserCount(@Param("user")UserEntity userEntity,@Param("map")MapEntity mapEntity);
+	
 }

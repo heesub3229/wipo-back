@@ -456,4 +456,18 @@ public class RelationService {
 		return ret;
 	}
 
+	public int findByMapAndUserCount(UserEntity userEntity,MapEntity mapEntity){
+		int ret = 0;
+		try {
+			ret = mapRelationRepository.findByMapAndUserCount(userEntity, mapEntity);
+						
+		}catch (Exception e) {
+			log.error("RelationService.findByMapAndUserCount : {}",e);
+			ret = 0;
+			// TODO: handle exception
+		}
+		return ret;
+	}
+	
+	
 }
